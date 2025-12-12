@@ -12,7 +12,7 @@ const center = [50.9619, 14.0732];
 onMounted(() => {
   const map = L.map("map", {
     center,
-    zoom: 11,
+    zoom: 8,
   });
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
