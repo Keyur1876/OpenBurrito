@@ -2,10 +2,10 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useLocationStore = defineStore('location', () => {
-  const lat = ref(51.0300)
-  const lng = ref(13.4424)
+  const lat = ref(52.22)
+  const lng = ref(4.53)
 
-  function setCurrentLocation() {
+  function update() {
     if (!navigator.geolocation) {
       console.warn('geolocation not supported')
       return
@@ -13,14 +13,15 @@ export const useLocationStore = defineStore('location', () => {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        console.log('it works')
-        this.lat = position.coords.latitude
-        this.lng = position.coords.longitude
+        lat.value = position.coords.latitude
+        lng.value = position.coords.longitude
       },
-      (error) => console.warn('geolocation denied or failded:', error),
-      { enableHighAccurarcy: false, timeout: 10000 },
+      (error) => {
+        console.warn('geolocation denied or failed:', error)
+      },
+      { enableHighAccuracy: false, timeout: 8000 },
     )
   }
 
-  return { lat, lng, setCurrentLocation }
+  return { lat, lng, update }
 })

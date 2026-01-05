@@ -1,20 +1,12 @@
 <script setup>
-import { useRouter } from "vue-router";
-import TopBar from "@/components/TopBar.vue";
-import BottomBar from "@/components/BottomBar.vue";
-import { useLocationStore } from '@/stores/location'
-import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import TopBar from '@/components/TopBar.vue'
+import BottomBar from '@/components/BottomBar.vue'
 
-const locationStore = useLocationStore()
-
-onMounted(() => {
-  locationStore.setCurrentLocation()
-})
-
-const router = useRouter();
+const router = useRouter()
 
 function handleGo(name) {
-  router.push({ name }); // assumes your routes have "name"
+  router.push({ name }) // assumes your routes have "name"
 }
 </script>
 
@@ -28,7 +20,9 @@ function handleGo(name) {
 </template>
 
 <style>
-html, body, #app {
+html,
+body,
+#app {
   height: 100%;
   margin: 0;
 }

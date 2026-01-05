@@ -1,65 +1,76 @@
 <script setup>
-import { onMounted, ref, computed } from "vue";
-import L from "leaflet";
+import { onMounted, ref, computed, onBeforeMount, watch } from 'vue'
+import L from 'leaflet'
 
-import "leaflet/dist/leaflet.css";
-import iconUrl from "leaflet/dist/images/marker-icon.png";
-import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
-import shadowUrl from "leaflet/dist/images/marker-shadow.png";
+import 'leaflet/dist/leaflet.css'
+import iconUrl from 'leaflet/dist/images/marker-icon.png'
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
 
 import { useLocationStore } from '@/stores/location'
 
-import { boulderLocations } from "@/data/boulderLocations";
+import { boulderLocations } from '@/data/boulderLocations'
 
-const locationStore = useLocationStore();
-const center = [locationStore.lat, locationStore.lng];
+const geolocation = useLocationStore()
 
 //SEARCH STATE
-const query = ref("");
-const showDropdown = ref(false);
+const query = ref('')
+const showDropdown = ref(false)
 
 // match by name (case-insensitive)
 const filteredLocations = computed(() => {
-  const q = query.value.trim().toLowerCase();
-  if (!q) return [];
-  return boulderLocations.filter((b) => b.name.toLowerCase().includes(q));
-});
+  const q = query.value.trim().toLowerCase()
+  if (!q) return []
+  return boulderLocations.filter((b) => b.name.toLowerCase().includes(q))
+})
 
 // LEAFLET REFS
-let map; // leaflet map instance
-const markersById = new Map(); // id -> marker
+let map // leaflet map instance
+const markersById = new Map() // id -> marker
 
 function selectLocation(b) {
   // set input text
-  query.value = b.name;
-  showDropdown.value = false;
+  query.value = b.name
+  showDropdown.value = false
 
-  const marker = markersById.get(b.id);
-  if (!marker) return;
+  const marker = markersById.get(b.id)
+  if (!marker) return
 
   // zoom/pan to it and open popup
-  map.setView([b.lat, b.lng], Math.max(map.getZoom(), 14), { animate: true });
-  marker.openPopup();
+  map.setView([b.lat, b.lng], Math.max(map.getZoom(), 14), { animate: true })
+  marker.openPopup()
 }
 
 function clearSearch() {
-  query.value = "";
-  showDropdown.value = false;
+  query.value = ''
+  showDropdown.value = false
 }
 
 onMounted(() => {
-  map = L.map("map", {
-    center,
+  watch(
+    () => [geolocation.lat, geolocation.lng],
+    ([lat, lng]) => {
+      if (lat != null && lng != null && map) {
+        map.setView([lat, lng], map.getZoom())
+      }
+    },
+    { once: true },
+  )
+
+  geolocation.update()
+
+  map = L.map('map', {
+    center: [geolocation.lat, geolocation.lng],
     zoom: 12,
     zoomControl: false,
-  });
+  })
 
-  L.control.zoom({ position: "bottomleft" }).addTo(map);
+  L.control.zoom({ position: 'bottomleft' }).addTo(map)
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
-    attribution: "&copy; OpenStreetMap contributors",
-  }).addTo(map);
+    attribution: '&copy; OpenStreetMap contributors',
+  }).addTo(map)
 
   const DefaultIcon = L.icon({
     iconUrl,
@@ -69,13 +80,13 @@ onMounted(() => {
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
     shadowSize: [41, 41],
-  });
-  L.Marker.prototype.options.icon = DefaultIcon;
+  })
+  L.Marker.prototype.options.icon = DefaultIcon
 
-  const bounds = L.latLngBounds([]);
+  const bounds = L.latLngBounds([])
 
   boulderLocations.forEach((b) => {
-    const marker = L.marker([b.lat, b.lng]).addTo(map);
+    const marker = L.marker([b.lat, b.lng]).addTo(map)
 
     marker.bindPopup(`
       <div style="min-width:180px">
@@ -83,21 +94,17 @@ onMounted(() => {
         <small>${b.city}</small><br/>
         <div style="margin-top:6px">${b.description}</div>
       </div>
-    `);
+    `)
 
-    markersById.set(b.id, marker);
-    bounds.extend([b.lat, b.lng]);
-  });
-
-  if (boulderLocations.length > 0) {
-    map.fitBounds(bounds, { padding: [30, 30] });
-  }
+    markersById.set(b.id, marker)
+    bounds.extend([b.lat, b.lng])
+  })
 
   // close dropdown when clicking on map
-  map.on("click", () => {
-    showDropdown.value = false;
-  });
-});
+  map.on('click', () => {
+    showDropdown.value = false
+  })
+})
 </script>
 
 <template>
