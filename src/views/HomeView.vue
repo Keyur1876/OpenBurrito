@@ -1,213 +1,128 @@
 <script setup>
+import { onMounted } from "vue";
+import L from "leaflet";
 
-import { boulderLocations } from '@/data/boulderLocations';
+import "leaflet/dist/leaflet.css";
+import iconUrl from "leaflet/dist/images/marker-icon.png";
+import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
+import shadowUrl from "leaflet/dist/images/marker-shadow.png";
+
+const center = [50.9619, 14.0732];
+
+onMounted(() => {
+  const map = L.map("map", {
+    center,
+    zoom: 8,
+  });
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap contributors",
+  }).addTo(map);
+
+  const DefaultIcon = L.icon({
+    iconUrl,
+    iconRetinaUrl,
+    shadowUrl,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
+  });
+  L.Marker.prototype.options.icon = DefaultIcon;
+
+  L.marker(center).addTo(map).bindPopup("Example location");
+});
 </script>
 
 <template>
-  <!-- Page wrapper: centered on desktop, full width on phone -->
-  <div class="page">
-    <!-- TOP BAR -->
-    <header class="top-bar">
-      <div class="logo-oval">Open Burrito</div>
+  <div class="map-page">
+    <!-- MAP -->
+    <div id="map"></div>
 
-      <div class="top-right">
-        <button class="login-btn">Login</button>
-        <button class="menu-btn" aria-label="Menu">
-          ☰
-        </button>
+    <!-- UI OVERLAY -->
+    <div class="overlay">
+      <!-- SEARCH BAR -->
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search" />
       </div>
-    </header>
-
-    <!-- SEARCH BAR -->
-    <div class="search-wrapper">
-      <input
-        class="search-input"
-        type="text"
-        placeholder="Search..."
-      />
     </div>
-
-    <!-- CONTENT CARDS -->
-    <main class="cards">
-      <section
-        class="card"
-        v-for="place in boulderLocations"
-        :key="place.id"
-      >
-        <img class="card-image" :src="place.image" :alt="place.name" />
-
-        <div class="card-info">
-          <h3>{{ place.name }}</h3>
-          <p>{{ place.city }}</p>
-        </div>
-      </section>
-    </main>
-
-    <!-- BOTTOM NAV -->
-    <footer class="bottom-nav">
-      <router-link to="/" class="home-button" aria-label="Home">
-        ⌂
-      </router-link>
-
-      <router-link to="/map" class="map-button" aria-label="Map">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="3 6 3 21 9 18 15 21 21 18 21 3 15 6 9 3 3 6"></polyline>
-          <line x1="9" y1="3" x2="9" y2="18"></line>
-          <line x1="15" y1="6" x2="15" y2="21"></line>
-        </svg>
-      </router-link>
-
-    </footer>
   </div>
 </template>
 
 <style scoped>
-
-.page {
+/* PAGE LAYOUT */
+.map-page {
   width: 100%;
-  min-height: 100vh;
-  padding: 16px 12px 20px;
-  display: flex;
-  flex-direction: column;
-  background: #ffffff;
+  height: 100vh;
+  position: relative;
 }
 
-/* Top bar */
-.top-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.logo-oval {
-  padding: 6px 14px;             
-  background: #ff5a5f;
-  border-radius: 20px;        
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-weight: 700;
-  font-size: 14px;            
-  white-space: nowrap;   
-}
-
-
-/* Right side of top bar */
-.top-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.login-btn {
-  padding: 4px 10px;
-  font-size: 12px;
-  background: transparent;
-  border: 1px solid #000;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.menu-btn {
-  padding: 4px 8px;
-  font-size: 18px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-}
-
-/* Search */
-.search-wrapper {
-  margin-top: 16px;
-}
-
-.search-input {
+/* MAP FULLSCREEN */
+#map {
   width: 100%;
-  padding: 8px 10px;
-  border-radius: 12px;
-  border: 1px solid #e0e0e0;
-  font-size: 14px;
+  height: 100%;
 }
 
-/* Cards area */
-.cards {
-  flex: 1;
-  margin-top: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+/* UI OVER MAP */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 500;        /* <-- keeps UI always above the map */
+  pointer-events: none; /* default: let map capture events */
 }
 
-.card {
-  display: flex;
-  align-items: center;
-  padding: 12px;
-  border-radius: 16px;
-  background: #e5e5e5;
-}
-
-/* left side: text */
-.card-info {
-  flex: 1;
-}
-
-/* right side: image */
-.card-image {
-  width: 30%;        /* Image takes 30% of card */
-  height: 80px;
-  object-fit: cover;
-  border-radius: 12px;
-  margin-left: 0px;
-  margin-right: 10px;
-  background: #ccc;
-}
-
-/* small text styling */
-.card-info h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.card-info p {
-  margin: 4px 0 0;
-  font-size: 14px;
-  color: #444;
-}
-
-/* Bottom navigation */
+/* Allow UI elements to be clicked */
+.search-bar,
 .bottom-nav {
-  margin-top: 16px;
+  pointer-events: auto;
+}
+
+/* EXIT BUTTON */
+.exit-button {
+  position: absolute;
+  top: 80px;
+  left: 12px;
+  padding: 6px 12px;
+  font-size: 14px;
+  border: 1px solid #333;
+  background: white;
+  border-radius: 6px;
+}
+
+/* SEARCH BAR */
+.search-bar {
+  margin-top: 40px;
+  width: calc(100% - 40px);
+  margin-left: auto;
+  margin-right: auto;
+  padding: 8px 12px;
+  background: #ddd;
+  border-radius: 8px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
 }
 
-.home-button {
+.search-bar input {
+  flex: 1;
   border: none;
   background: transparent;
-  font-size: 35px;
-  cursor: pointer;
+  font-size: 14px;
+  margin-left: 6px;
+  outline: none;
 }
 
-.map-button {
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  padding: 6px;
-  text-decoration: none;
-  color: inherit; 
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.filter-tag {
+  padding: 4px 10px;
+  background: #eee;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  font-size: 13px;
 }
 
-
-.map-button:hover {
-  background: #f0f0f0;
-  border-radius: 8px;
+.active {
+  font-weight: bold;
+  transform: scale(1.2);
 }
-
 </style>
