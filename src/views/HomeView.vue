@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted } from "vue";
+import { onMounted, ref, computed } from "vue";
 import L from "leaflet";
 
 import "leaflet/dist/leaflet.css";
@@ -7,13 +7,51 @@ import iconUrl from "leaflet/dist/images/marker-icon.png";
 import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
 import shadowUrl from "leaflet/dist/images/marker-shadow.png";
 
+import { boulderLocations } from "@/data/boulderLocations";
+
 const center = [50.9619, 14.0732];
 
+//SEARCH STATE
+const query = ref("");
+const showDropdown = ref(false);
+
+// match by name (case-insensitive)
+const filteredLocations = computed(() => {
+  const q = query.value.trim().toLowerCase();
+  if (!q) return [];
+  return boulderLocations.filter((b) => b.name.toLowerCase().includes(q));
+});
+
+// LEAFLET REFS 
+let map; // leaflet map instance
+const markersById = new Map(); // id -> marker
+
+function selectLocation(b) {
+  // set input text
+  query.value = b.name;
+  showDropdown.value = false;
+
+  const marker = markersById.get(b.id);
+  if (!marker) return;
+
+  // zoom/pan to it and open popup
+  map.setView([b.lat, b.lng], Math.max(map.getZoom(), 14), { animate: true });
+  marker.openPopup();
+}
+
+function clearSearch() {
+  query.value = "";
+  showDropdown.value = false;
+}
+
 onMounted(() => {
-  const map = L.map("map", {
+  map = L.map("map", {
     center,
-    zoom: 8,
+    zoom: 12,
+    zoomControl: false,
   });
+
+  L.control.zoom({ position: "bottomleft" }).addTo(map);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
@@ -31,77 +69,118 @@ onMounted(() => {
   });
   L.Marker.prototype.options.icon = DefaultIcon;
 
-  L.marker(center).addTo(map).bindPopup("Example location");
+  const bounds = L.latLngBounds([]);
+
+  boulderLocations.forEach((b) => {
+    const marker = L.marker([b.lat, b.lng]).addTo(map);
+
+    marker.bindPopup(`
+      <div style="min-width:180px">
+        <strong>${b.name}</strong><br/>
+        <small>${b.city}</small><br/>
+        <div style="margin-top:6px">${b.description}</div>
+      </div>
+    `);
+
+    markersById.set(b.id, marker);
+    bounds.extend([b.lat, b.lng]);
+  });
+
+  if (boulderLocations.length > 0) {
+    map.fitBounds(bounds, { padding: [30, 30] });
+  }
+
+  // close dropdown when clicking on map
+  map.on("click", () => {
+    showDropdown.value = false;
+  });
 });
 </script>
 
 <template>
   <div class="map-page">
-    <!-- MAP -->
     <div id="map"></div>
 
-    <!-- UI OVERLAY -->
     <div class="overlay">
-      <!-- SEARCH BAR -->
-      <div class="search-bar">
-        <span class="search-icon">🔍</span>
-        <input type="text" placeholder="Search" />
+      <div class="search-wrap">
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+
+          <input
+            v-model="query"
+            type="text"
+            placeholder="Search boulders..."
+            @focus="showDropdown = true"
+            @input="showDropdown = true"
+            @keydown.esc="clearSearch"
+          />
+
+          <button v-if="query" class="clear-btn" @click="clearSearch">✕</button>
+        </div>
+
+        <!-- DROPDOWN-->
+        <div v-if="showDropdown && filteredLocations.length" class="dropdown">
+          <button
+            v-for="b in filteredLocations"
+            :key="b.id"
+            class="dropdown-item"
+            @click="selectLocation(b)"
+          >
+            <div class="name">{{ b.name }}</div>
+            <div class="city">{{ b.city }}</div>
+          </button>
+        </div>
+
+        <!-- no results" -->
+        <div
+          v-else-if="showDropdown && query.trim() && filteredLocations.length === 0"
+          class="dropdown empty"
+        >
+          No results
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* PAGE LAYOUT */
 .map-page {
   width: 100%;
   height: 100vh;
   position: relative;
 }
 
-/* MAP FULLSCREEN */
 #map {
   width: 100%;
   height: 100%;
 }
 
-/* UI OVER MAP */
 .overlay {
   position: absolute;
   inset: 0;
-  z-index: 500;        /* <-- keeps UI always above the map */
-  pointer-events: none; /* default: let map capture events */
+  z-index: 500;
+  pointer-events: none;
+  padding-top: 56px;
+  padding-bottom: 64px;
+  box-sizing: border-box;
 }
 
-/* Allow UI elements to be clicked */
-.search-bar,
-.bottom-nav {
+/* SEARCH AREA */
+.search-wrap {
   pointer-events: auto;
-}
-
-/* EXIT BUTTON */
-.exit-button {
-  position: absolute;
-  top: 80px;
-  left: 12px;
-  padding: 6px 12px;
-  font-size: 14px;
-  border: 1px solid #333;
-  background: white;
-  border-radius: 6px;
-}
-
-/* SEARCH BAR */
-.search-bar {
-  margin-top: 40px;
   width: calc(100% - 40px);
-  margin-left: auto;
-  margin-right: auto;
+  margin: 12px auto 0 auto;
+  position: relative;
+}
+
+.search-bar {
+  width: 100%;
   padding: 8px 12px;
   background: #ddd;
-  border-radius: 8px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 
 .search-bar input {
@@ -109,20 +188,53 @@ onMounted(() => {
   border: none;
   background: transparent;
   font-size: 14px;
-  margin-left: 6px;
   outline: none;
 }
 
-.filter-tag {
-  padding: 4px 10px;
-  background: #eee;
-  border: 1px solid #bbb;
-  border-radius: 6px;
-  font-size: 13px;
+.clear-btn {
+  border: none;
+  background: white;
+  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
 }
 
-.active {
-  font-weight: bold;
-  transform: scale(1.2);
+/* DROPDOWN */
+.dropdown {
+  margin-top: 8px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-item {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: white;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background: #f3f3f3;
+}
+
+.name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.city {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.dropdown.empty {
+  padding: 10px 12px;
+  color: #444;
 }
 </style>
