@@ -16,10 +16,7 @@ function isActive(name) {
 <template>
   <nav class="bottom-bar">
     <!-- ADD -->
-    <button class="icon-btn" @click="go('add')">
-      ➕
-    </button>
-
+    <button class="icon-btn" @click="go('add')">➕</button>
     <!-- MAP (HOME) -->
     <button
       class="icon-btn"
