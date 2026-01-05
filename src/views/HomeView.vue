@@ -6,11 +6,13 @@ import "leaflet/dist/leaflet.css";
 import iconUrl from "leaflet/dist/images/marker-icon.png";
 import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
 import shadowUrl from "leaflet/dist/images/marker-shadow.png";
+
 import { useLocationStore } from '@/stores/location'
 
 import { boulderLocations } from "@/data/boulderLocations";
 
 const locationStore = useLocationStore();
+const center = [locationStore.lat, locationStore.lng];
 
 //SEARCH STATE
 const query = ref("");
@@ -46,9 +48,8 @@ function clearSearch() {
 }
 
 onMounted(() => {
-
   map = L.map("map", {
-    ,
+    center,
     zoom: 12,
     zoomControl: false,
   });
