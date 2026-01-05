@@ -1,213 +1,240 @@
 <script setup>
+import { onMounted, ref, computed } from "vue";
+import L from "leaflet";
 
-import { boulderLocations } from '@/data/boulderLocations';
+import "leaflet/dist/leaflet.css";
+import iconUrl from "leaflet/dist/images/marker-icon.png";
+import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
+import shadowUrl from "leaflet/dist/images/marker-shadow.png";
+
+import { boulderLocations } from "@/data/boulderLocations";
+
+const center = [50.9619, 14.0732];
+
+//SEARCH STATE
+const query = ref("");
+const showDropdown = ref(false);
+
+// match by name (case-insensitive)
+const filteredLocations = computed(() => {
+  const q = query.value.trim().toLowerCase();
+  if (!q) return [];
+  return boulderLocations.filter((b) => b.name.toLowerCase().includes(q));
+});
+
+// LEAFLET REFS 
+let map; // leaflet map instance
+const markersById = new Map(); // id -> marker
+
+function selectLocation(b) {
+  // set input text
+  query.value = b.name;
+  showDropdown.value = false;
+
+  const marker = markersById.get(b.id);
+  if (!marker) return;
+
+  // zoom/pan to it and open popup
+  map.setView([b.lat, b.lng], Math.max(map.getZoom(), 14), { animate: true });
+  marker.openPopup();
+}
+
+function clearSearch() {
+  query.value = "";
+  showDropdown.value = false;
+}
+
+onMounted(() => {
+  map = L.map("map", {
+    center,
+    zoom: 12,
+    zoomControl: false,
+  });
+
+  L.control.zoom({ position: "bottomleft" }).addTo(map);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap contributors",
+  }).addTo(map);
+
+  const DefaultIcon = L.icon({
+    iconUrl,
+    iconRetinaUrl,
+    shadowUrl,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
+  });
+  L.Marker.prototype.options.icon = DefaultIcon;
+
+  const bounds = L.latLngBounds([]);
+
+  boulderLocations.forEach((b) => {
+    const marker = L.marker([b.lat, b.lng]).addTo(map);
+
+    marker.bindPopup(`
+      <div style="min-width:180px">
+        <strong>${b.name}</strong><br/>
+        <small>${b.city}</small><br/>
+        <div style="margin-top:6px">${b.description}</div>
+      </div>
+    `);
+
+    markersById.set(b.id, marker);
+    bounds.extend([b.lat, b.lng]);
+  });
+
+  if (boulderLocations.length > 0) {
+    map.fitBounds(bounds, { padding: [30, 30] });
+  }
+
+  // close dropdown when clicking on map
+  map.on("click", () => {
+    showDropdown.value = false;
+  });
+});
 </script>
 
 <template>
-  <!-- Page wrapper: centered on desktop, full width on phone -->
-  <div class="page">
-    <!-- TOP BAR -->
-    <header class="top-bar">
-      <div class="logo-oval">Open Burrito</div>
+  <div class="map-page">
+    <div id="map"></div>
 
-      <div class="top-right">
-        <button class="login-btn">Login</button>
-        <button class="menu-btn" aria-label="Menu">
-          ☰
-        </button>
-      </div>
-    </header>
+    <div class="overlay">
+      <div class="search-wrap">
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
 
-    <!-- SEARCH BAR -->
-    <div class="search-wrapper">
-      <input
-        class="search-input"
-        type="text"
-        placeholder="Search..."
-      />
-    </div>
+          <input
+            v-model="query"
+            type="text"
+            placeholder="Search boulders..."
+            @focus="showDropdown = true"
+            @input="showDropdown = true"
+            @keydown.esc="clearSearch"
+          />
 
-    <!-- CONTENT CARDS -->
-    <main class="cards">
-      <section
-        class="card"
-        v-for="place in boulderLocations"
-        :key="place.id"
-      >
-        <img class="card-image" :src="place.image" :alt="place.name" />
-
-        <div class="card-info">
-          <h3>{{ place.name }}</h3>
-          <p>{{ place.city }}</p>
+          <button v-if="query" class="clear-btn" @click="clearSearch">✕</button>
         </div>
-      </section>
-    </main>
 
-    <!-- BOTTOM NAV -->
-    <footer class="bottom-nav">
-      <router-link to="/" class="home-button" aria-label="Home">
-        ⌂
-      </router-link>
+        <!-- DROPDOWN-->
+        <div v-if="showDropdown && filteredLocations.length" class="dropdown">
+          <button
+            v-for="b in filteredLocations"
+            :key="b.id"
+            class="dropdown-item"
+            @click="selectLocation(b)"
+          >
+            <div class="name">{{ b.name }}</div>
+            <div class="city">{{ b.city }}</div>
+          </button>
+        </div>
 
-      <router-link to="/map" class="map-button" aria-label="Map">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="3 6 3 21 9 18 15 21 21 18 21 3 15 6 9 3 3 6"></polyline>
-          <line x1="9" y1="3" x2="9" y2="18"></line>
-          <line x1="15" y1="6" x2="15" y2="21"></line>
-        </svg>
-      </router-link>
-
-    </footer>
+        <!-- no results" -->
+        <div
+          v-else-if="showDropdown && query.trim() && filteredLocations.length === 0"
+          class="dropdown empty"
+        >
+          No results
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-
-.page {
+.map-page {
   width: 100%;
-  min-height: 100vh;
-  padding: 16px 12px 20px;
-  display: flex;
-  flex-direction: column;
-  background: #ffffff;
+  height: 100vh;
+  position: relative;
 }
 
-/* Top bar */
-.top-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+#map {
+  width: 100%;
+  height: 100%;
 }
 
-.logo-oval {
-  padding: 6px 14px;             
-  background: #ff5a5f;
-  border-radius: 20px;        
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-weight: 700;
-  font-size: 14px;            
-  white-space: nowrap;   
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  pointer-events: none;
+  padding-top: 56px;
+  padding-bottom: 64px;
+  box-sizing: border-box;
 }
 
+/* SEARCH AREA */
+.search-wrap {
+  pointer-events: auto;
+  width: calc(100% - 40px);
+  margin: 12px auto 0 auto;
+  position: relative;
+}
 
-/* Right side of top bar */
-.top-right {
+.search-bar {
+  width: 100%;
+  padding: 8px 12px;
+  background: #ddd;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.login-btn {
-  padding: 4px 10px;
-  font-size: 12px;
-  background: transparent;
-  border: 1px solid #000;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.menu-btn {
-  padding: 4px 8px;
-  font-size: 18px;
-  background: transparent;
+.search-bar input {
+  flex: 1;
   border: none;
+  background: transparent;
+  font-size: 14px;
+  outline: none;
+}
+
+.clear-btn {
+  border: none;
+  background: white;
+  border-radius: 8px;
+  width: 28px;
+  height: 28px;
   cursor: pointer;
 }
 
-/* Search */
-.search-wrapper {
-  margin-top: 16px;
+/* DROPDOWN */
+.dropdown {
+  margin-top: 8px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
-.search-input {
+.dropdown-item {
   width: 100%;
-  padding: 8px 10px;
-  border-radius: 12px;
-  border: 1px solid #e0e0e0;
-  font-size: 14px;
+  text-align: left;
+  border: none;
+  background: white;
+  padding: 10px 12px;
+  cursor: pointer;
 }
 
-/* Cards area */
-.cards {
-  flex: 1;
-  margin-top: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.dropdown-item:hover {
+  background: #f3f3f3;
 }
 
-.card {
-  display: flex;
-  align-items: center;
-  padding: 12px;
-  border-radius: 16px;
-  background: #e5e5e5;
-}
-
-/* left side: text */
-.card-info {
-  flex: 1;
-}
-
-/* right side: image */
-.card-image {
-  width: 30%;        /* Image takes 30% of card */
-  height: 80px;
-  object-fit: cover;
-  border-radius: 12px;
-  margin-left: 0px;
-  margin-right: 10px;
-  background: #ccc;
-}
-
-/* small text styling */
-.card-info h3 {
-  margin: 0;
-  font-size: 16px;
+.name {
   font-weight: 600;
+  font-size: 14px;
 }
 
-.card-info p {
-  margin: 4px 0 0;
-  font-size: 14px;
+.city {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.dropdown.empty {
+  padding: 10px 12px;
   color: #444;
 }
-
-/* Bottom navigation */
-.bottom-nav {
-  margin-top: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.home-button {
-  border: none;
-  background: transparent;
-  font-size: 35px;
-  cursor: pointer;
-}
-
-.map-button {
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  padding: 6px;
-  text-decoration: none;
-  color: inherit; 
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-
-.map-button:hover {
-  background: #f0f0f0;
-  border-radius: 8px;
-}
-
 </style>
