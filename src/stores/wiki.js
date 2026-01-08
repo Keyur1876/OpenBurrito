@@ -2,11 +2,14 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useWikiStore = defineStore('wiki', () => {
+  const entryTypes = ref(['Boulder', 'Climb'])
+  const entryFilter = ref('All')
+
   const entries = ref([
     {
       id: 1,
+      type: 'boulder',
       name: 'Lokomotive Rock',
-      city: 'Kurort Rathen, Germany',
       lat: 50.96658,
       lng: 14.08351,
       image: '/images/istockphoto1.jpg',
@@ -16,7 +19,7 @@ export const useWikiStore = defineStore('wiki', () => {
     {
       id: 2,
       name: 'Rauenstein Plateau',
-      city: 'Kurort Rathen, Germany',
+      type: 'boulder',
       lat: 50.95181,
       lng: 14.06185,
       image: '/images/stockphoto2.jpg',
@@ -25,8 +28,8 @@ export const useWikiStore = defineStore('wiki', () => {
     },
     {
       id: 3,
+      type: 'climb',
       name: 'Schwedenturm',
-      city: 'Kurort Rathen, Germany',
       lat: 50.9605,
       lng: 14.0738,
       image: '/images/stockphoto3.jpg',
@@ -35,5 +38,5 @@ export const useWikiStore = defineStore('wiki', () => {
     },
   ])
 
-  return { entries }
+  return { entries, entryTypes, entryFilter }
 })
