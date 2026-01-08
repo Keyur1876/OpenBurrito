@@ -1,43 +1,31 @@
 <script setup>
-import { useRouter, useRoute } from "vue-router";
+import { useRouter, useRoute } from 'vue-router'
 
-const router = useRouter();
-const route = useRoute();
+const router = useRouter()
+const route = useRoute()
 
 function go(name) {
-  router.push({ name });
+  router.push({ name })
 }
 
 function isActive(name) {
-  return route.name === name;
+  return route.name === name
 }
 </script>
 
 <template>
   <nav class="bottom-bar">
     <!-- ADD -->
-    <button class="icon-btn" @click="go('add')">
-      ➕
-    </button>
+    <button class="icon-btn" @click="go('add')">➕</button>
 
     <!-- MAP (HOME) -->
-    <button
-      class="icon-btn"
-      :class="{ active: isActive('home') }"
-      @click="go('home')"
-    >
-      🗺️
-    </button>
+    <button class="icon-btn" :class="{ active: isActive('home') }" @click="go('home')">🗺️</button>
 
     <!-- CHAT / NOTES -->
-    <button class="icon-btn" @click="go('wiki')">
-      <i class="pi pi-check" style="font-size: 1rem"></i>
-    </button>
+    <button class="pi pi-check" style="font-size: 1rem" @click="go('wiki')" />
 
     <!-- PROFILE -->
-    <button class="icon-btn" @click="go('profile')">
-      👤
-    </button>
+    <button class="icon-btn" @click="go('profile')">👤</button>
   </nav>
 </template>
 
@@ -74,7 +62,9 @@ function isActive(name) {
 
   font-size: 20px;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .icon-btn:hover {
