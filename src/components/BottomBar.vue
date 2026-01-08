@@ -1,6 +1,5 @@
 <script setup>
 import { useRouter, useRoute } from "vue-router";
-import 'primeicons/primeicons.css'
 
 const router = useRouter();
 const route = useRoute();
