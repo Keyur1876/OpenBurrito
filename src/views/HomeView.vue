@@ -11,7 +11,7 @@ import { useLocationStore } from '@/stores/location'
 
 import { boulderLocations } from '@/data/boulderLocations'
 
-const geolocation = useLocationStore()
+const geo = useLocationStore()
 
 //SEARCH STATE
 const query = ref('')
@@ -48,19 +48,15 @@ function clearSearch() {
 
 onMounted(() => {
   watch(
-    () => [geolocation.lat, geolocation.lng],
-    ([lat, lng]) => {
-      if (lat != null && lng != null && map) {
-        map.setView([lat, lng], map.getZoom())
-      }
-    },
+    () => [geo.lat, geo.lng],
+    ([lat, lng]) => map.setView([lat, lng]),
     { once: true },
   )
 
-  geolocation.update()
+  geo.setToDeviceLocation()
 
   map = L.map('map', {
-    center: [geolocation.lat, geolocation.lng],
+    center: [geo.lat, geo.lng],
     zoom: 12,
     zoomControl: false,
   })

@@ -5,7 +5,7 @@ export const useLocationStore = defineStore('location', () => {
   const lat = ref(52.22)
   const lng = ref(4.53)
 
-  function update() {
+  function setToDeviceLocation() {
     if (!navigator.geolocation) {
       console.warn('geolocation not supported')
       return
@@ -19,9 +19,8 @@ export const useLocationStore = defineStore('location', () => {
       (error) => {
         console.warn('geolocation denied or failed:', error)
       },
-      { enableHighAccuracy: false, timeout: 8000 },
     )
   }
 
-  return { lat, lng, update }
+  return { lat, lng, setToDeviceLocation }
 })
