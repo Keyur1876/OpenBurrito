@@ -1,5 +1,6 @@
 <script setup>
 import { useRouter, useRoute } from "vue-router";
+import 'primeicons/primeicons.css'
 
 const router = useRouter();
 const route = useRoute();
@@ -31,7 +32,7 @@ function isActive(name) {
 
     <!-- CHAT / NOTES -->
     <button class="icon-btn" @click="go('wiki')">
-      💬
+      <i class="pi pi-check" style="font-size: 1rem"></i>
     </button>
 
     <!-- PROFILE -->
