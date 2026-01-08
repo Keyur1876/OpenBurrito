@@ -30,7 +30,7 @@ function isActive(name) {
     </button>
 
     <!-- CHAT / NOTES -->
-    <button class="icon-btn" @click="go('chat')">
+    <button class="icon-btn" @click="go('wiki')">
       💬
     </button>
 
