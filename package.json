@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@primeuix/themes": "^2.0.2",
+    "@primevue/forms": "^4.5.4",
     "leaflet": "^1.9.4",
     "pinia": "^3.0.4",
     "primeicons": "^7.0.0",
