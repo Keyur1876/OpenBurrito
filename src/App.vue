@@ -13,7 +13,6 @@ function handleGo(name) {
 <template>
   <TopBar />
 
-  <!-- Your routed views -->
   <RouterView />
 
   <BottomBar @go="handleGo" />
