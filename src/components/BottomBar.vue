@@ -22,7 +22,7 @@ function isActive(name) {
     <button class="icon-btn" :class="{ active: isActive('home') }" @click="go('home')">🗺️</button>
 
     <!-- CHAT / NOTES -->
-    <button class="pi pi-check" style="font-size: 1rem" @click="go('wiki')" />
+    <button class="pi pi-check" @click="go('wiki')" />
 
     <!-- PROFILE -->
     <button class="icon-btn" @click="go('profile')">👤</button>
@@ -30,6 +30,9 @@ function isActive(name) {
 </template>
 
 <style scoped>
+button {
+  font-size: 2rem;
+}
 .bottom-bar {
   position: fixed;
   bottom: 0;
