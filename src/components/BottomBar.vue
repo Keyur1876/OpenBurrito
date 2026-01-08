@@ -22,7 +22,7 @@ function isActive(name) {
     <button class="icon-btn" :class="{ active: isActive('home') }" @click="go('home')">🗺️</button>
 
     <!-- CHAT / NOTES -->
-    <button class="pi pi-check" @click="go('wiki')" />
+    <button class="pi pi-book" @click="go('wiki')" />
 
     <!-- PROFILE -->
     <button class="icon-btn" @click="go('profile')">👤</button>
