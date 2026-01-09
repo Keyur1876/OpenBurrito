@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import WikiView from '@/views/WikiView.vue'
+import Doc from '@/components/Doc.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -17,8 +18,8 @@ const router = createRouter({
     },
     {
       path: '/doc',
-      name: 'documentation',
-      component: DocumentationPage,
+      name: 'doc',
+      component: Doc,
     },
   ],
 })
