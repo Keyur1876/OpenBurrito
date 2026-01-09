@@ -1,11 +1,6 @@
 <template>
   <h1>Wiki</h1>
-  <IconField>
-    <InputIcon>
-      <i class="pi pi-search" />
-    </InputIcon>
-    <InputText v-model="wiki.search" placeholder="Search Wiki" />
-  </IconField>
+  <WikiSearch/>
   <DataView :value="entries">
     <template #list="{ items }">
       <WikiCard v-for="i in items" :entry="i"> </WikiCard>
@@ -15,9 +10,10 @@
 
 <script setup>
 import { useWikiStore } from '@/stores/wiki'
-import { DataView, InputText, IconField, InputIcon } from 'primevue'
+import { DataView } from 'primevue'
 import WikiCard from '@/components/WikiCard.vue'
 import { ref, computed } from 'vue'
+import WikiSearch from '@/components/WikiSearch.vue'
 
 const wiki = useWikiStore()
 
