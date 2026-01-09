@@ -11,10 +11,8 @@
 <script setup>
 import { useWikiStore } from '@/stores/wiki'
 import { DataView } from 'primevue'
-import WikiCard from '@/components/WikiCard.vue'
 import { ref, computed } from 'vue'
-import WikiSearch from '@/components/WikiSearch.vue'
-import WikiTopBar from '@/components/WikiTopBar.vue'
+import { WikiCard, WikiSearch, WikiTopBar } from '@/components/wiki'
 
 const wiki = useWikiStore()
 

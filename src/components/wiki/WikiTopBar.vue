@@ -6,8 +6,7 @@
 </template>
 
 <script setup>
-  import WikiSearch from '@/components/WikiSearch.vue'
-  import WikiFilter from '@/components/WikiFilter.vue'
+import { WikiSearch, WikiFilter } from '@/components/wiki'
 </script>
 
 <style scoped>
