@@ -1,29 +1,24 @@
 <template>
   <h1>Wiki</h1>
-  <DataTable
-    :value="wikiStore.entries"
-    v-model:filters="filters"
-    :globalFilterFields="['name', 'type']"
-    showHeaders="false"
-    size="large"
-  >
-    <template #empty> No wiki entries found. </template>
-    <template #loading> Loading wiki entries. Please wait. </template>
-    <template #header>
-      <IconField>
-        <InputIcon>
-          <i class="pi pi-search" />
-        </InputIcon>
-        <InputText v-model="filters['global'].value" placeholder="Search Wiki" size="large" />
-      </IconField>
+  <IconField>
+    <InputIcon>
+      <i class="pi pi-search" />
+    </InputIcon>
+    <InputText v-model="search" placeholder="Search Wiki" />
+  </IconField>
+  <DataView :value="filteredEntries">
+    <template #list="{ items }">
+      <WikiCard v-for="i in items" :entry="i"> </WikiCard>
+      <div v-for="item in items" :key="item.id">
+        {{ item.name }}
+      </div>
     </template>
-    <Column field="name"> </Column>
-  </DataTable>
+  </DataView>
 </template>
 
 <script setup>
 import { useWikiStore } from '@/stores/wiki'
-import { Card, DataTable, Column, InputText, IconField, InputIcon } from 'primevue'
+import { DataView, Card, DataTable, Column, InputText, IconField, InputIcon } from 'primevue'
 import WikiCard from '@/components/WikiCard.vue'
 import { ref, computed } from 'vue'
 
