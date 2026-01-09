@@ -1,28 +1,24 @@
 <template>
-  <header>
-    <WikiFilter />
-    <WikiSearch />
-  </header>
+  <Toolbar class="toolbar">
+    <template #start><WikiFilter /></template>
+    <template #end><WikiSearch /></template>
+  </Toolbar>
 </template>
 
 <script setup>
 import { WikiSearch, WikiFilter } from '@/components/wiki'
+import { Toolbar } from 'primevue'
 </script>
 
 <style scoped>
-header {
+.toolbar {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
 
-  height: 10vh;
-
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-
   background: transparent;
+  border: none;
 
   z-index: 1000;
 }
