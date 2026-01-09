@@ -12,7 +12,7 @@ function handleGo(name) {
 </script>
 
 <template>
-  <TopBar v-if="route.name !== 'wiki'" />
+  <TopBar v-if="route.name !== 'wiki' && route.name !== 'doc'" />
 
   <RouterView />
 
