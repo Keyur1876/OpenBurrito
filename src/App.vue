@@ -16,7 +16,7 @@ function handleGo(name) {
 
   <RouterView />
 
-  <BottomBar @go="handleGo" />
+  <BottomBar @go="handleGo" v-if="route.name !== 'doc'"/>
 </template>
 
 <style>

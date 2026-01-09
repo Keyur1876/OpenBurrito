@@ -15,19 +15,13 @@ import { DoxenSidebar, VueDoxen } from 'vue-doxen'
 import { computed, ref } from 'vue'
 
 import { WikiFilter, WikiSearch, WikiTopBar, WikiCard } from '@/components/wiki'
-
-defineOptions({
-  name: 'Doc',
-})
+import { WikiFilterDemo } from '@/components/wiki/demos/WikiFilterDemo.js'
 
 const selectedDemo = ref('WikiFilter')
 
 const demos = computed(() => {
   return {
-    WikiFilter,
-    WikiSearch,
-    WikiTopBar,
-    WikiCard,
+    WikiFilterDemo,
   }
 })
 </script>
