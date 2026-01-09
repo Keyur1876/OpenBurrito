@@ -10,35 +10,24 @@
   </div>
 </template>
 
-<script>
-import { computed, ref } from 'vue'
+<script setup>
 import { DoxenSidebar, VueDoxen } from 'vue-doxen'
+import { computed, ref } from 'vue'
 
-import 'vue-doxen/vue-doxen.css'
+import { WikiFilter, WikiSearch, WikiTopBar, WikiCard } from '@/components/wiki'
 
-import EditorView from '@/views/EditorView.vue'
-import MapView from '@/views/MapView.vue'
+defineOptions({
+  name: 'Doc',
+})
 
-export default {
-  name: 'DocumentationPage',
-  components: {
-    DoxenSidebar,
-    VueDoxen,
-  },
-  setup: function () {
-    const selectedDemo = ref('EditorView')
+const selectedDemo = ref('WikiFilter')
 
-    const demos = computed(() => {
-      return {
-        EditorView,
-        MapView,
-      }
-    })
-
-    return {
-      demos,
-      selectedDemo,
-    }
-  },
-}
+const demos = computed(() => {
+  return {
+    WikiFilter,
+    WikiSearch,
+    WikiTopBar,
+    WikiCard,
+  }
+})
 </script>
