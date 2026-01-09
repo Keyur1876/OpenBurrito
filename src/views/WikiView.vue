@@ -8,28 +8,27 @@
   >
     <template #empty> No wiki entries found. </template>
     <template #loading> Loading wiki entries. Please wait. </template>
-    <Column field="name">
-      <template #filter="{ filterModel, filterCallback }">
-        <InputText type="search" v-model="filterModel.value" @input="filterCallback()"/>
-      </template>
-    </Column>
+    <template #header>
+      <IconField>
+        <InputIcon>
+          <i class="pi pi-search" />
+        </InputIcon>
+        <InputText v-model="filters['global'].value" placeholder="Keyword Search" />
+      </IconField>
+    </template>
+    <Column field="name"> </Column>
     <Column field="type" filter />
   </DataTable>
 </template>
 
 <script setup>
 import { useWikiStore } from '@/stores/wiki'
-import { DataTable, Column, InputText } from 'primevue'
+import { DataTable, Column, InputText, IconField, InputIcon } from 'primevue'
 import WikiCard from '@/components/WikiCard.vue'
 import { ref } from 'vue'
 
 const wikiStore = useWikiStore()
-
-const filters = ref({
-  name: { value: null, matchMode: 'contains' },
-  type: { value: null, matchMode: 'contains' },
-  global: { value: null, matchMode: 'contains' },
-})
+const filters = ref({ global: { value: null, matchMode: 'contains' } })
 </script>
 
 <style scoped></style>
