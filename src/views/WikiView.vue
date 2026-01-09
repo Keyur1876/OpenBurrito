@@ -13,11 +13,11 @@
         <InputIcon>
           <i class="pi pi-search" />
         </InputIcon>
-        <InputText v-model="filters['global'].value" placeholder="Search Wiki" />
+        <InputText v-model="filters['global'].value" placeholder="Search Wiki" size="large" />
       </IconField>
     </template>
     <Column field="name"> </Column>
-    <Column field="type"/>
+    <Column field="type" />
   </DataTable>
 </template>
 
