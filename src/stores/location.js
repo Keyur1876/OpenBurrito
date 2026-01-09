@@ -19,6 +19,7 @@ export const useLocationStore = defineStore('location', () => {
       (error) => {
         console.warn('geolocation denied or failed:', error)
       },
+      { enableHighAccuracy: true },
     )
   }
 
