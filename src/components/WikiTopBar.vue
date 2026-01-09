@@ -1,11 +1,13 @@
 <template>
   <header>
+    <WikiFilter />
     <WikiSearch />
   </header>
 </template>
 
 <script setup>
   import WikiSearch from '@/components/WikiSearch.vue'
+  import WikiFilter from '@/components/WikiFilter.vue'
 </script>
 
 <style scoped>
@@ -18,8 +20,8 @@ header {
   height: 10vh;
 
   display: flex;
+  justify-content: space-around;
   align-items: center;
-  justify-content: center;
 
   background: transparent;
 

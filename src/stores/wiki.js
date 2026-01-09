@@ -2,9 +2,9 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useWikiStore = defineStore('wiki', () => {
-  const entryTypes = ref(['Boulder', 'Climb'])
-  const entryFilter = ref('All')
+  const entryTypes = ['Boulder', 'Climb']
   const search = ref('')
+  const filter = ref('All')
 
   const entries = ref([
     {
@@ -39,5 +39,5 @@ export const useWikiStore = defineStore('wiki', () => {
     },
   ])
 
-  return { entries, entryTypes, entryFilter, search }
+  return { entries, entryTypes, search, filter }
 })
