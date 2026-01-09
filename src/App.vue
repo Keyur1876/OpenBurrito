@@ -1,9 +1,10 @@
 <script setup>
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import TopBar from '@/components/TopBar.vue'
 import BottomBar from '@/components/BottomBar.vue'
 
 const router = useRouter()
+const route = useRoute()
 
 function handleGo(name) {
   router.push({ name }) // assumes your routes have "name"
@@ -11,7 +12,7 @@ function handleGo(name) {
 </script>
 
 <template>
-  <TopBar />
+  <TopBar v-if="route.name !== 'wiki'" />
 
   <RouterView />
 

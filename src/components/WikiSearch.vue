@@ -1,5 +1,5 @@
 <template>
-  <IconField>
+  <IconField class="search-bar">
     <InputIcon>
       <i class="pi pi-search" />
     </InputIcon>
@@ -14,4 +14,9 @@ import { InputText, IconField, InputIcon } from 'primevue'
 const wiki = useWikiStore()
 </script>
 
-<style scoped></style>
+<style scoped>
+.search-bar {
+  position: absolute;
+  z-index: 500;
+}
+</style>

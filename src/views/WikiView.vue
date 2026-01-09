@@ -1,6 +1,6 @@
 <template>
+  <WikiTopBar />
   <h1>Wiki</h1>
-  <WikiSearch />
   <DataView :value="entries">
     <template #list="{ items }">
       <WikiCard v-for="i in items" :entry="i"> </WikiCard>
@@ -14,6 +14,7 @@ import { DataView } from 'primevue'
 import WikiCard from '@/components/WikiCard.vue'
 import { ref, computed } from 'vue'
 import WikiSearch from '@/components/WikiSearch.vue'
+import WikiTopBar from '@/components/WikiTopBar.vue'
 
 const wiki = useWikiStore()
 
