@@ -1,15 +1,14 @@
 <template>
   <Card>
     <template #header>
-      <img alt="img" :src="entry.image"/>
+      <img alt="img" :src="entry.image" />
     </template>
     <template #title>{{ entry.name }}</template>
-    <template #content>Content</template>
   </Card>
 </template>
 
 <script setup>
-import Card from 'primevue/card'
+import { Card } from 'primevue'
 
 defineProps({ entry: Object })
 </script>
