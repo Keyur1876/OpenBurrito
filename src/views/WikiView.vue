@@ -10,7 +10,7 @@
     <template #loading> Loading wiki entries. Please wait. </template>
     <Column field="name">
       <template #filter="{ filterModel, filterCallback }">
-        <input type="text" v-model="filterModel.value" @input="filterCallback()" />
+        <InputText type="search" v-model="filterModel.value" @input="filterCallback()"/>
       </template>
     </Column>
     <Column field="type" filter />
@@ -19,7 +19,7 @@
 
 <script setup>
 import { useWikiStore } from '@/stores/wiki'
-import { DataTable, Column } from 'primevue'
+import { DataTable, Column, InputText } from 'primevue'
 import WikiCard from '@/components/WikiCard.vue'
 import { ref } from 'vue'
 
