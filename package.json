@@ -14,7 +14,12 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
+    "@primeuix/themes": "^2.0.2",
+    "@primevue/forms": "^4.5.4",
     "leaflet": "^1.9.4",
+    "pinia": "^3.0.4",
+    "primeicons": "^7.0.0",
+    "primevue": "^4.5.4",
     "vue": "^3.5.25",
     "vue-router": "^4.6.3"
   },
@@ -26,6 +31,7 @@
     "eslint-plugin-vue": "~10.5.1",
     "globals": "^16.5.0",
     "prettier": "3.6.2",
+    "sass": "^1.97.2",
     "vite": "^7.2.4",
     "vite-plugin-vue-devtools": "^8.0.5"
   }

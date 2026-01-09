@@ -1,11 +1,38 @@
 <script setup>
-import { RouterView } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+import TopBar from '@/components/TopBar.vue'
+import BottomBar from '@/components/BottomBar.vue'
+
+const router = useRouter()
+const route = useRoute()
+
+function handleGo(name) {
+  router.push({ name }) // assumes your routes have "name"
+}
 </script>
 
 <template>
+  <TopBar v-if="route.name !== 'wiki'" />
+
   <RouterView />
+
+  <BottomBar @go="handleGo" />
 </template>
 
 <style>
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
 
+.leaflet-bottom.leaflet-right {
+  margin-bottom: 80px; /* bottom bar + breathing room */
+}
+
+.leaflet-control-zoom {
+  border-radius: 12px;
+  overflow: hidden;
+}
 </style>

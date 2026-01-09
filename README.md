@@ -1,7 +1,5 @@
 # OpenBurrito
 
-- [developer](./doc/dev)
-
 ## Project Setup
 
 ```sh
