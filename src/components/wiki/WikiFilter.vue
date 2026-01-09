@@ -1,5 +1,5 @@
 <template>
-  <SelectButton class="select" v-model="wiki.filter" :options="filters" />
+  <SelectButton class="select" v-model="wiki.filter" :options="filters" :allowEmpty="false"/>
 </template>
 
 <script setup>

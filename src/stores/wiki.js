@@ -9,7 +9,7 @@ export const useWikiStore = defineStore('wiki', () => {
   const entries = ref([
     {
       id: 1,
-      type: 'boulder',
+      type: 'Boulder',
       name: 'Lokomotive Rock',
       lat: 50.96658,
       lng: 14.08351,
@@ -20,7 +20,7 @@ export const useWikiStore = defineStore('wiki', () => {
     {
       id: 2,
       name: 'Rauenstein Plateau',
-      type: 'boulder',
+      type: 'Boulder',
       lat: 50.95181,
       lng: 14.06185,
       image: '/images/stockphoto2.jpg',
@@ -29,7 +29,7 @@ export const useWikiStore = defineStore('wiki', () => {
     },
     {
       id: 3,
-      type: 'climb',
+      type: 'Climb',
       name: 'Schwedenturm',
       lat: 50.9605,
       lng: 14.0738,

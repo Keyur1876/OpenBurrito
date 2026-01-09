@@ -17,9 +17,17 @@ import { WikiCard, WikiSearch, WikiTopBar } from '@/components/wiki'
 const wiki = useWikiStore()
 
 const entries = computed(() => {
-  const q = wiki.search.toLowerCase()
+  function filter(e) {
+    const s = wiki.search.toLowerCase()
+    const f = wiki.filter.toLowerCase()
 
-  return wiki.entries.filter((e) => e.name.toLowerCase().includes(q))
+    const matchSearch = e.name.toLowerCase().includes(s)
+    const matchFilter = e.type.toLowerCase() === f || f === 'all'
+
+    return matchSearch && matchFilter
+  }
+
+  return wiki.entries.filter(filter)
 })
 </script>
 
