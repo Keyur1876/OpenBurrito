@@ -23,7 +23,6 @@ import WikiCard from '@/components/WikiCard.vue'
 import { ref, computed } from 'vue'
 
 const wikiStore = useWikiStore()
-const filters = ref({ global: { value: null, matchMode: 'contains' } })
 const search = ref('')
 
 const filteredEntries = computed(() => {
