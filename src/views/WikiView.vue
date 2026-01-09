@@ -1,6 +1,6 @@
 <template>
   <h1>Wiki</h1>
-  <WikiSearch/>
+  <WikiSearch />
   <DataView :value="entries">
     <template #list="{ items }">
       <WikiCard v-for="i in items" :entry="i"> </WikiCard>
