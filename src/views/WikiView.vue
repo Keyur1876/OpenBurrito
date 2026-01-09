@@ -4,35 +4,27 @@
     <InputIcon>
       <i class="pi pi-search" />
     </InputIcon>
-    <InputText v-model="search" placeholder="Search Wiki" />
+    <InputText v-model="wiki.search" placeholder="Search Wiki" />
   </IconField>
-  <DataView :value="filteredEntries">
+  <DataView :value="entries">
     <template #list="{ items }">
       <WikiCard v-for="i in items" :entry="i"> </WikiCard>
-      <div v-for="item in items" :key="item.id">
-        {{ item.name }}
-      </div>
     </template>
   </DataView>
 </template>
 
 <script setup>
 import { useWikiStore } from '@/stores/wiki'
-import { DataView, Card, DataTable, Column, InputText, IconField, InputIcon } from 'primevue'
+import { DataView, InputText, IconField, InputIcon } from 'primevue'
 import WikiCard from '@/components/WikiCard.vue'
 import { ref, computed } from 'vue'
 
-const wikiStore = useWikiStore()
-const search = ref('')
+const wiki = useWikiStore()
 
-const filteredEntries = computed(() => {
-  if (!search.value) return wikiStore.entries
+const entries = computed(() => {
+  const q = wiki.search.toLowerCase()
 
-  const q = search.value.toLowerCase()
-
-  return wikiStore.entries.filter(
-    (entry) => entry.name.toLowerCase().includes(q) || entry.type.toLowerCase().includes(q),
-  )
+  return wiki.entries.filter((e) => e.name.toLowerCase().includes(q))
 })
 </script>
 

@@ -4,6 +4,7 @@ import { ref } from 'vue'
 export const useWikiStore = defineStore('wiki', () => {
   const entryTypes = ref(['Boulder', 'Climb'])
   const entryFilter = ref('All')
+  const search = ref('')
 
   const entries = ref([
     {
@@ -38,5 +39,5 @@ export const useWikiStore = defineStore('wiki', () => {
     },
   ])
 
-  return { entries, entryTypes, entryFilter }
+  return { entries, entryTypes, entryFilter, search }
 })
