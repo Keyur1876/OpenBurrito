@@ -15,6 +15,11 @@ const router = createRouter({
       name: 'wiki',
       component: WikiView,
     },
+    {
+      path: '/doc',
+      name: 'documentation',
+      component: DocumentationPage,
+    },
   ],
 })
 
