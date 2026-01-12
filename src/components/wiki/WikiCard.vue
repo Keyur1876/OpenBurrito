@@ -1,7 +1,9 @@
 <template>
-  <Card @click="opened = true">
+  <Card @click="opened = true" class="overflow-hidden cursor-pointer">
     <template #header>
-      <Image :src="entry.image" />
+      <div class="h-20 overflow-hidden">
+        <Image :src="entry.image" />
+      </div>
     </template>
     <template #title>{{ entry.name }}</template>
   </Card>
