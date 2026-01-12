@@ -1,7 +1,7 @@
 <template>
-  <Image :src="props.entry.image" preview width="100%"/>
+  <Image :src="props.entry.image" />
   <Fieldset legend="Description">
-    <p>{{ entry.description }}</p>
+    {{ entry.description }}
   </Fieldset>
   <OrderList v-if="isBoulder" v-model="relatedClimbs" dataKey="id">
     <template #option="{ option }">

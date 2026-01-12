@@ -5,14 +5,16 @@
         <Image :src="entry.image" />
       </div>
     </template>
-    <template #title>{{ entry.name }}</template>
+    <template #title>
+      <div class="flex items-center">
+        <i v-if="isBoulder" class="pi pi-sort-up-fill" />
+        <i v-else class="pi pi-flag-fill" />
+        <h3 class="pl-5">{{ entry.name }}</h3>
+      </div>
+    </template>
   </Card>
-  <Dialog
-    v-model:visible="opened"
-    modal
-    :header="entry.name"
-    :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
-  >
+
+  <Dialog v-model:visible="opened" modal :breakpoints="{ '1199px': '75vw', '575px': '90vw' }">
     <template #header>
       <EntryHeader :entry="entry" />
     </template>
@@ -27,7 +29,7 @@ import { Entry, EntryHeader } from '@/components/wiki'
 
 const opened = ref(false)
 
-defineProps({
+const props = defineProps({
   entry: {
     type: Object,
     default: {
@@ -42,6 +44,6 @@ defineProps({
     },
   },
 })
-</script>
 
-<style module></style>
+const isBoulder = props.entry.type.toLowerCase() === 'boulder'
+</script>
