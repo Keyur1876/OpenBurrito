@@ -5,11 +5,17 @@
     </template>
     <template #title>{{ entry.name }}</template>
   </Card>
-  <Dialog v-model:visible="opened" modal :header="entry.name">
+  <Dialog
+    v-model:visible="opened"
+    modal
+    :header="entry.name"
+    maximizable
+    :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
+  >
     <template #header>
-      <EntryHeader :entry="entry"/>
+      <EntryHeader :entry="entry" />
     </template>
-    <Entry />
+    <Entry :entry="entry" />
   </Dialog>
 </template>
 
