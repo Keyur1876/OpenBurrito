@@ -1,6 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router'
-import { Menubar, Dock, Toolbar, Button } from 'primevue'
+import { Button } from 'primevue'
 
 const router = useRouter()
 </script>
