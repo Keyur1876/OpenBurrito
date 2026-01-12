@@ -1,7 +1,7 @@
 <template>
   <Card @click="opened = true">
     <template #header>
-      <img alt="img" :src="entry.image" />
+      <Image :src="entry.image" />
     </template>
     <template #title>{{ entry.name }}</template>
   </Card>
@@ -20,7 +20,7 @@
 </template>
 
 <script setup>
-import { Card, Dialog } from 'primevue'
+import { Card, Dialog, Image } from 'primevue'
 import { ref } from 'vue'
 import { Entry, EntryHeader } from '@/components/wiki'
 
@@ -43,8 +43,4 @@ defineProps({
 })
 </script>
 
-<style scoped>
-img {
-  width: 100%;
-}
-</style>
+<style module></style>
