@@ -11,7 +11,6 @@
     v-model:visible="opened"
     modal
     :header="entry.name"
-    maximizable
     :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
   >
     <template #header>
