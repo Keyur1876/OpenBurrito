@@ -2,6 +2,7 @@
 import { useRouter, useRoute } from 'vue-router'
 import TopBar from '@/components/TopBar.vue'
 import BottomBar from '@/components/BottomBar.vue'
+import { Toast } from 'primevue'
 
 const router = useRouter()
 const route = useRoute()
