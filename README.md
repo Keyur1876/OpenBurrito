@@ -1,10 +1,15 @@
 # OpenBurrito
 
+
 ## Project Setup
 
 ```sh
 npm install
 ```
+
+## SUPERBASE Key
+
+Please ask one of the active contributers to get the Superbase key.
 
 ## Development Documentaion
 
