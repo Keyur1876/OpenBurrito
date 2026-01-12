@@ -6,6 +6,11 @@
 npm install
 ```
 
+## Development Documentaion
+
+This project uses [Vue Doxen](https://thejaredwilcurt.com/vue-doxen).
+The documentation component is routet to '/doc'.
+
 ### Compile and Hot-Reload for Development
 
 ```sh
