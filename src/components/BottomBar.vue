@@ -17,7 +17,6 @@ function isActive(name) {
   <nav class="bottom-bar">
     <!-- ADD -->
     <button class="icon-btn" @click="go('add')">➕</button>
-
     <!-- MAP (HOME) -->
     <button class="icon-btn" :class="{ active: isActive('home') }" @click="go('home')">🗺️</button>
 
