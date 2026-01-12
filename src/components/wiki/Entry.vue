@@ -12,7 +12,7 @@
 
 <script setup>
 import { Image, OrderList, Fieldset } from 'primevue'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useWikiStore } from '@/stores/wiki'
 
 const wiki = useWikiStore()

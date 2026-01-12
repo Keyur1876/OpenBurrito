@@ -2,7 +2,7 @@
   <Avatar v-if="isBoulder" icon="pi pi-sort-up-fill" />
   <Avatar v-else icon="pi pi-flag-fill" />
   <div class="heading">
-    <h2>{{ entry.name }}</h2>
+    <h2 class="font-bold text-3">{{ entry.name }}</h2>
     <p v-if="isBoulder">lat: {{ entry.location[0] }}, lng: {{ entry.location[1] }}</p>
     <p v-else>{{ relatedBoulder.name }}</p>
   </div>
