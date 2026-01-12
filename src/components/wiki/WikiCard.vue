@@ -1,14 +1,21 @@
 <template>
-  <Card>
+  <Card @click="opened = true">
     <template #header>
       <img alt="img" :src="entry.image" />
     </template>
     <template #title>{{ entry.name }}</template>
   </Card>
+  <Dialog v-model:visible="opened" modal :header="entry.name">
+    <Entry />
+  </Dialog>
 </template>
 
 <script setup>
-import { Card } from 'primevue'
+import { Card, Dialog } from 'primevue'
+import { ref } from 'vue'
+import { Entry } from '@/components/wiki'
+
+const opened = ref(false)
 
 defineProps({
   entry: {
