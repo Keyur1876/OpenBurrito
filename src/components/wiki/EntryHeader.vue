@@ -10,6 +10,7 @@
 
 <script setup>
 import { Avatar } from 'primevue'
+import { computed } from 'vue'
 import { useWikiStore } from '@/stores/wiki'
 
 const wiki = useWikiStore()
@@ -20,7 +21,9 @@ const props = defineProps({
   },
 })
 
-const isBoulder = props.entry.type.toLowerCase() === 'boulder'
+const isBoulder = computed(() => {
+  props.entry.type.toLowerCase() === 'boulder'
+})
 
 // WARN: undefined for boulders
 const relatedBoulder = wiki.entries.find((i) => i.id === props.entry.location)

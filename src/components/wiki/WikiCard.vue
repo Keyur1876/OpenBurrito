@@ -24,7 +24,7 @@
 
 <script setup>
 import { Card, Dialog, Image } from 'primevue'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { Entry, EntryHeader } from '@/components/wiki'
 
 const opened = ref(false)
@@ -45,5 +45,7 @@ const props = defineProps({
   },
 })
 
-const isBoulder = props.entry.type.toLowerCase() === 'boulder'
+const isBoulder = computed(() => {
+  return props.entry.type.toLowerCase() === 'boulder'
+})
 </script>

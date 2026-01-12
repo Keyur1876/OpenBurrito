@@ -23,7 +23,9 @@ const props = defineProps({
   },
 })
 
-const isBoulder = props.entry.type.toLowerCase() === 'boulder'
+const isBoulder = computed(() => {
+  return props.entry.type.toLowerCase() === 'boulder'
+})
 
 // WARN: undefined for climbs
 const relatedClimbs = wiki.entries.filter((i) => i.location === props.entry.id)
