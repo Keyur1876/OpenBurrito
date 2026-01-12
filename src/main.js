@@ -1,4 +1,3 @@
-import '@/assets/styles/style.scss'
 import '@/assets/main.css'
 
 import App from '@/App.vue'
