@@ -1,7 +1,6 @@
 <script setup>
 import { useRouter, useRoute } from 'vue-router'
-import TopBar from '@/components/TopBar.vue'
-import BottomBar from '@/components/BottomBar.vue'
+import {BottomBar} from '@/components'
 import { Toast } from 'primevue'
 
 const router = useRouter()
@@ -13,27 +12,7 @@ function handleGo(name) {
 </script>
 
 <template>
-  <TopBar v-if="route.name !== 'wiki' && route.name !== 'doc'" />
-
   <RouterView />
 
-  <BottomBar @go="handleGo" v-if="route.name !== 'doc'"/>
+  <BottomBar @go="handleGo" v-if="route.name !== 'doc'" />
 </template>
-
-<style>
-html,
-body,
-#app {
-  height: 100%;
-  margin: 0;
-}
-
-.leaflet-bottom.leaflet-right {
-  margin-bottom: 80px; /* bottom bar + breathing room */
-}
-
-.leaflet-control-zoom {
-  border-radius: 12px;
-  overflow: hidden;
-}
-</style>
