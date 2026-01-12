@@ -10,7 +10,21 @@
 <script setup>
 import { Card } from 'primevue'
 
-defineProps({ entry: Object })
+defineProps({
+  entry: {
+    type: Object,
+    default: {
+      id: 1,
+      type: 'Boulder',
+      name: 'Lokomotive Rock',
+      lat: 50.96658,
+      lng: 14.08351,
+      image: '/images/istockphoto1.jpg',
+      description:
+        'A distinctive sandstone formation near Kurort Rathen. Popular in the Saxon Switzerland area for traditional climbing and bouldering-style problems on solid sandstone.',
+    },
+  },
+})
 </script>
 
 <style scoped>

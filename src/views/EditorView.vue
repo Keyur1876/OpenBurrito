@@ -1,5 +1,5 @@
 <template>
-  <h1>Wiki Editor<h1>
+  <h1>Wiki Editor</h1>
 </template>
 
 <script setup>

@@ -13,12 +13,11 @@ function handleGo(name) {
 </script>
 
 <template>
-  <TopBar v-if="route.name !== 'wiki'" />
-  <Toast />
+  <TopBar v-if="route.name !== 'wiki' && route.name !== 'doc'" />
 
   <RouterView />
 
-  <BottomBar @go="handleGo" />
+  <BottomBar @go="handleGo" v-if="route.name !== 'doc'"/>
 </template>
 
 <style>
