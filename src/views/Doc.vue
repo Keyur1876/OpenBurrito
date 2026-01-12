@@ -18,6 +18,7 @@ import { WikiFilterDemo } from '@/components/wiki/demos/WikiFilterDemo.js'
 import { WikiSearchDemo } from '@/components/wiki/demos/WikiSearchDemo.js'
 import { WikiTopBarDemo } from '@/components/wiki/demos/WikiTopBarDemo.js'
 import { WikiCardDemo } from '@/components/wiki/demos/WikiCardDemo.js'
+import { MapViewDemo } from '@/views/demos/MapViewDemo.js'
 
 const selectedDemo = ref('WikiFilter')
 
@@ -27,6 +28,7 @@ const demos = computed(() => {
     WikiSearchDemo,
     WikiCardDemo,
     WikiTopBarDemo,
+    MapViewDemo,
   }
 })
 </script>

@@ -12,11 +12,6 @@ import { Toolbar } from 'primevue'
 
 <style scoped>
 .toolbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-
   background: transparent;
   border: none;
 

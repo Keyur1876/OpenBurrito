@@ -1,16 +1,35 @@
 <template>
-  <Card>
+  <Card @click="opened = true" class="overflow-hidden cursor-pointer">
     <template #header>
-      <img alt="img" :src="entry.image" />
+      <div class="h-20 overflow-hidden">
+        <Image :src="entry.image" />
+      </div>
     </template>
-    <template #title>{{ entry.name }}</template>
+    <template #title>
+      <div class="flex items-center">
+        <i v-if="isBoulder" class="pi pi-sort-up-fill" />
+        <i v-else class="pi pi-flag-fill" />
+        <h3 class="pl-5">{{ entry.name }}</h3>
+      </div>
+    </template>
   </Card>
+
+  <Dialog v-model:visible="opened" modal :breakpoints="{ '1199px': '75vw', '575px': '90vw' }">
+    <template #header>
+      <EntryHeader :entry="entry" />
+    </template>
+    <Entry :entry="entry" />
+  </Dialog>
 </template>
 
 <script setup>
-import { Card } from 'primevue'
+import { Card, Dialog, Image } from 'primevue'
+import { ref, computed } from 'vue'
+import { Entry, EntryHeader } from '@/components/wiki'
 
-defineProps({
+const opened = ref(false)
+
+const props = defineProps({
   entry: {
     type: Object,
     default: {
@@ -25,10 +44,8 @@ defineProps({
     },
   },
 })
-</script>
 
-<style scoped>
-img {
-  width: 100%;
-}
-</style>
+const isBoulder = computed(() => {
+  return props.entry.type.toLowerCase() === 'boulder'
+})
+</script>

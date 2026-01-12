@@ -1,9 +1,11 @@
 <template>
-  <WikiTopBar />
-  <h1>Wiki</h1>
-  <DataView :value="entries">
-    <template #list="{ items }">
-      <WikiCard v-for="i in items" :entry="i"> </WikiCard>
+  <h1 class="font-black text-5xl text-center m-2">Wiki</h1>
+  <WikiTopBar class="sticky top-0" />
+  <DataView :value="entries" layout="grid">
+    <template #grid="{ items }">
+      <div class="grid place-item-center gap-5 m-5 grid-cols-[repeat(auto-fit,minmax(20rem,1fr))]">
+        <WikiCard v-for="i in items" :entry="i"> </WikiCard>
+      </div>
     </template>
   </DataView>
 </template>
@@ -30,5 +32,3 @@ const entries = computed(() => {
   return wiki.entries.filter(filter)
 })
 </script>
-
-<style scoped></style>
