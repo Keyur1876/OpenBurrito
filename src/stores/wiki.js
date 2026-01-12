@@ -11,6 +11,7 @@ export const useWikiStore = defineStore('wiki', () => {
       id: 1,
       type: 'Boulder',
       name: 'Lokomotive Rock',
+      location: [50.96658, 14.08351],
       lat: 50.96658,
       lng: 14.08351,
       image: '/images/istockphoto1.jpg',
@@ -21,6 +22,7 @@ export const useWikiStore = defineStore('wiki', () => {
       id: 2,
       name: 'Rauenstein Plateau',
       type: 'Boulder',
+      location: [50.95181, 14.06185],
       lat: 50.95181,
       lng: 14.06185,
       image: '/images/stockphoto2.jpg',
@@ -33,6 +35,7 @@ export const useWikiStore = defineStore('wiki', () => {
       name: 'Schwedenturm',
       lat: 50.9605,
       lng: 14.0738,
+      location: 1,
       image: '/images/stockphoto3.jpg',
       description:
         'A narrow sandstone tower near the Schwedenlöcher area. Known for technical climbing and compact rock features typical of Saxon Switzerland.',

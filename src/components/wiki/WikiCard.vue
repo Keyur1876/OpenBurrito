@@ -6,6 +6,9 @@
     <template #title>{{ entry.name }}</template>
   </Card>
   <Dialog v-model:visible="opened" modal :header="entry.name">
+    <template #header>
+      <EntryHeader :entry="entry"/>
+    </template>
     <Entry />
   </Dialog>
 </template>
@@ -13,7 +16,7 @@
 <script setup>
 import { Card, Dialog } from 'primevue'
 import { ref } from 'vue'
-import { Entry } from '@/components/wiki'
+import { Entry, EntryHeader } from '@/components/wiki'
 
 const opened = ref(false)
 
