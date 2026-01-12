@@ -1,6 +1,7 @@
 <script setup>
-import { onMounted, ref, computed, onBeforeMount, watch } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import L from 'leaflet'
+import { supabase } from '@/lib/supabase'
 
 import 'leaflet/dist/leaflet.css'
 import iconUrl from 'leaflet/dist/images/marker-icon.png'
@@ -9,35 +10,38 @@ import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
 
 import { useLocationStore } from '@/stores/location'
 
-import { boulderLocations } from '@/data/boulderLocations'
-
 const geo = useLocationStore()
 
-//SEARCH STATE
+// DB LOCATIONS
+const locations = ref([])
+
+// SEARCH STATE
 const query = ref('')
 const showDropdown = ref(false)
 
-// match by name (case-insensitive)
+// SEARCH FILTER (case-insensitive)
 const filteredLocations = computed(() => {
   const q = query.value.trim().toLowerCase()
   if (!q) return []
-  return boulderLocations.filter((b) => b.name.toLowerCase().includes(q))
+  return locations.value.filter((l) =>
+    l.name?.toLowerCase().includes(q)
+  )
 })
 
-// LEAFLET REFS
-let map // leaflet map instance
-const markersById = new Map() // id -> marker
+// LEAFLET
+let map
+const markersById = new Map()
 
-function selectLocation(b) {
-  // set input text
-  query.value = b.name
+function selectLocation(loc) {
+  query.value = loc.name
   showDropdown.value = false
 
-  const marker = markersById.get(b.id)
+  const marker = markersById.get(loc.id)
   if (!marker) return
 
-  // zoom/pan to it and open popup
-  map.setView([b.lat, b.lng], Math.max(map.getZoom(), 14), { animate: true })
+  map.setView([loc.lat, loc.lng], Math.max(map.getZoom(), 14), {
+    animate: true,
+  })
   marker.openPopup()
 }
 
@@ -46,7 +50,8 @@ function clearSearch() {
   showDropdown.value = false
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // watch geo location once
   watch(
     () => [geo.lat, geo.lng],
     ([lat, lng]) => map.setView([lat, lng]),
@@ -55,6 +60,7 @@ onMounted(() => {
 
   geo.setToDeviceLocation()
 
+  // create map
   map = L.map('map', {
     center: [geo.lat, geo.lng],
     zoom: 12,
@@ -68,6 +74,7 @@ onMounted(() => {
     attribution: '&copy; OpenStreetMap contributors',
   }).addTo(map)
 
+  // marker icon fix
   const DefaultIcon = L.icon({
     iconUrl,
     iconRetinaUrl,
@@ -79,24 +86,42 @@ onMounted(() => {
   })
   L.Marker.prototype.options.icon = DefaultIcon
 
+  // fetch locations from Supabase
+  const { data, error } = await supabase
+    .from('locations')
+    .select('id, name, city, lat, lng, description')
+    .order('name')
+
+  if (error) {
+    console.error(error)
+    return
+  }
+
+  locations.value = (data ?? []).filter(
+    (l) => typeof l.lat === 'number' && typeof l.lng === 'number'
+  )
+
   const bounds = L.latLngBounds([])
 
-  boulderLocations.forEach((b) => {
-    const marker = L.marker([b.lat, b.lng]).addTo(map)
+  locations.value.forEach((l) => {
+    const marker = L.marker([l.lat, l.lng]).addTo(map)
 
     marker.bindPopup(`
       <div style="min-width:180px">
-        <strong>${b.name}</strong><br/>
-        <small>${b.city}</small><br/>
-        <div style="margin-top:6px">${b.description}</div>
+        <strong>${l.name}</strong><br/>
+        <small>${l.city ?? ''}</small><br/>
+        <div style="margin-top:6px">${l.description ?? ''}</div>
       </div>
     `)
 
-    markersById.set(b.id, marker)
-    bounds.extend([b.lat, b.lng])
+    markersById.set(l.id, marker)
+    bounds.extend([l.lat, l.lng])
   })
 
-  // close dropdown when clicking on map
+  if (bounds.isValid()) {
+    map.fitBounds(bounds, { padding: [30, 30] })
+  }
+
   map.on('click', () => {
     showDropdown.value = false
   })

@@ -21,7 +21,12 @@ const router = createRouter({
       name: 'doc',
       component: Doc,
     },
+    {
+      path: "/add",
+      name: "add",
+      component: () => import("@/views/AddLocationView.vue"),
+    },
   ],
-})
+ })
 
 export default router
