@@ -67,7 +67,7 @@ onMounted(async () => {
     zoomControl: false,
   })
 
-  L.control.zoom({ position: 'bottomleft' }).addTo(map)
+  L.control.zoom({ position: 'bottomright' }).addTo(map)
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
@@ -89,7 +89,7 @@ onMounted(async () => {
   // fetch locations from Supabase
   const { data, error } = await supabase
     .from('locations')
-    .select('id, name, city, lat, lng, description')
+    .select('id, name, city, lat, lng, type, label, length, first_ascent, description, image_url')
     .order('name')
 
   if (error) {
@@ -106,13 +106,59 @@ onMounted(async () => {
   locations.value.forEach((l) => {
     const marker = L.marker([l.lat, l.lng]).addTo(map)
 
-    marker.bindPopup(`
-      <div style="min-width:180px">
-        <strong>${l.name}</strong><br/>
-        <small>${l.city ?? ''}</small><br/>
-        <div style="margin-top:6px">${l.description ?? ''}</div>
+    const safe = (v) => (v ? String(v) : "")
+    const esc = (s) =>
+      safe(s).replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      }[c]))
+
+    const popupHtml = `
+      <div class="loc-popup">
+        ${
+          l.image_url
+            ? `
+              <div class="loc-popup__media">
+                <img src="${esc(l.image_url)}" alt="${esc(l.name)}" />
+              </div>
+            `
+            : ""
+        }
+
+        <div class="loc-popup__body">
+          <div class="loc-popup__title">${esc(l.name)}</div>
+          ${l.city ? `<div class="loc-popup__subtitle">${esc(l.city)}</div>` : ""}
+
+          <div class="loc-popup__chips">
+            ${l.type ? `<span class="chip">${esc(l.type)}</span>` : ""}
+            ${l.label ? `<span class="chip">${esc(l.label)}</span>` : ""}
+            ${l.length ? `<span class="chip">${esc(l.length)} m</span>` : ""}
+          </div>
+
+          ${
+            l.first_ascent
+              ? `<div class="loc-popup__meta"><strong>First ascent:</strong> ${esc(l.first_ascent)}</div>`
+              : ""
+          }
+
+          ${
+            l.description
+              ? `<div class="loc-popup__desc">${esc(l.description)}</div>`
+              : ""
+          }
+        </div>
       </div>
-    `)
+    `
+
+    marker.bindPopup(popupHtml, {
+      className: "leaflet-popup--loc",
+      maxWidth: 360,
+      autoPanPadding: [20, 20],
+    })
+
 
     markersById.set(l.id, marker)
     bounds.extend([l.lat, l.lng])
