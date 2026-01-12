@@ -1,17 +1,25 @@
 <script setup>
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import L from "leaflet";
+import { supabase } from "@/lib/supabase";
 
 import "leaflet/dist/leaflet.css";
 import iconUrl from "leaflet/dist/images/marker-icon.png";
 import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
 import shadowUrl from "leaflet/dist/images/marker-shadow.png";
 
-const center = [50.9619, 14.0732];
+const fallbackCenter = [50.9619, 14.0732];
 
-onMounted(() => {
+const loading = ref(false);
+const errorMsg = ref("");
+
+onMounted(async () => {
+  loading.value = true;
+  errorMsg.value = "";
+
+  // 1) Create map
   const map = L.map("map", {
-    center,
+    center: fallbackCenter,
     zoom: 8,
   });
 
@@ -20,6 +28,7 @@ onMounted(() => {
     attribution: "&copy; OpenStreetMap contributors",
   }).addTo(map);
 
+  // 2) Fix default marker icon (Leaflet + bundlers)
   const DefaultIcon = L.icon({
     iconUrl,
     iconRetinaUrl,
@@ -31,7 +40,103 @@ onMounted(() => {
   });
   L.Marker.prototype.options.icon = DefaultIcon;
 
-  L.marker(center).addTo(map).bindPopup("Example location");
+  // 3) Fetch locations from Supabase
+  const { data, error } = await supabase
+    .from("locations")
+    .select(
+      "id, name, city, lat, lng, type, label, length, first_ascent, description, image_url"
+    )
+    .order("created_at", { ascending: false });
+
+  loading.value = false;
+
+  if (error) {
+    errorMsg.value = error.message;
+    return;
+  }
+
+  const locations = (data ?? []).filter(
+    (x) => typeof x.lat === "number" && typeof x.lng === "number"
+  );
+
+  // 4) Add markers
+  const bounds = [];
+
+  for (const loc of locations) {
+    const position = [loc.lat, loc.lng];
+    bounds.push(position);
+
+    const safe = (v) => (v ? String(v) : "");
+
+    const popupHtml = `
+      <div style="max-width:240px">
+        <div style="font-weight:700; font-size:14px; margin-bottom:6px;">
+          ${safe(loc.name)}
+        </div>
+
+        ${
+          loc.image_url
+            ? `<img src="${safe(loc.image_url)}" alt="${safe(
+                loc.name
+              )}" style="width:100%; border-radius:10px; margin-bottom:8px;" />`
+            : ""
+        }
+
+        <div style="font-size:12px; opacity:.85; margin-bottom:6px;">
+          ${safe(loc.city)}
+        </div>
+
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
+          ${
+            loc.type
+              ? `<span style="border:1px solid #ccc; padding:2px 8px; border-radius:999px; font-size:12px;">${safe(
+                  loc.type
+                )}</span>`
+              : ""
+          }
+          ${
+            loc.label
+              ? `<span style="border:1px solid #ccc; padding:2px 8px; border-radius:999px; font-size:12px;">${safe(
+                  loc.label
+                )}</span>`
+              : ""
+          }
+          ${
+            loc.length
+              ? `<span style="border:1px solid #ccc; padding:2px 8px; border-radius:999px; font-size:12px;">${safe(
+                  loc.length
+                )} m</span>`
+              : ""
+          }
+        </div>
+
+        ${
+          loc.first_ascent
+            ? `<div style="font-size:12px; margin-bottom:6px;">
+                <strong>First ascent:</strong> ${safe(loc.first_ascent)}
+              </div>`
+            : ""
+        }
+
+        ${
+          loc.description
+            ? `<div style="font-size:12px; line-height:1.3;">
+                ${safe(loc.description)}
+              </div>`
+            : ""
+        }
+      </div>
+    `;
+
+    L.marker(position).addTo(map).bindPopup(popupHtml);
+  }
+
+  // 5) Fit map to markers (if we have any)
+  if (bounds.length > 0) {
+    map.fitBounds(bounds, { padding: [30, 30] });
+  } else {
+    map.setView(fallbackCenter, 8);
+  }
 });
 </script>
 
@@ -58,12 +163,12 @@ onMounted(() => {
         <button class="filter-tag">Filters</button>
       </div>
 
-      <!-- BOTTOM NAV -->
+      <div v-if="loading" class="status">Loading locations…</div>
+      <div v-if="errorMsg" class="status error">{{ errorMsg }}</div>
+
       <footer class="bottom-nav">
         <button class="nav-btn">＋</button>
-
         <router-link to="/map" class="nav-btn active">🗺️</router-link>
-
         <button class="nav-btn">📘</button>
         <button class="nav-btn">👤</button>
       </footer>
@@ -151,7 +256,25 @@ onMounted(() => {
   font-size: 13px;
 }
 
-/* BOTTOM NAV */
+.status {
+  position: absolute;
+  top: 140px;
+  left: 12px;
+  right: 12px;
+  margin: 0 auto;
+  max-width: 420px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.status.error {
+  border-color: #ffb3b3;
+  background: rgba(255, 230, 230, 0.95);
+}
+
 .bottom-nav {
   position: absolute;
   bottom: 20px;
