@@ -9,6 +9,7 @@ const route = useRoute()
 </script>
 
 <template>
+  <Toast />
   <RouterView />
 
   <BottomBar v-if="route.name !== 'doc'" />

@@ -1,131 +1,236 @@
 <script setup>
-import { ref } from "vue";
-import { useRouter } from "vue-router";
-import { supabase } from "@/lib/supabase";
+import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { supabase } from '@/lib/supabase'
+import { Form } from '@primevue/forms'
+import { InputText, Message, Button, SelectButton } from 'primevue'
+import FileUpload from 'primevue/fileupload'
+import Editor from 'primevue/editor'
+import { useToast } from 'primevue/usetoast'
+import { useWikiStore } from '@/stores/wiki'
 
-const router = useRouter();
+const wiki = useWikiStore()
 
-const saving = ref(false);
-const errorMsg = ref("");
+const toast = useToast()
+
+const onUpload = () => {
+  toast.add({ severity: 'info', summary: 'Success', detail: 'File Uploaded', life: 3000 })
+}
+
+function onFileSelect(event, form) {
+  const file = event.files?.[0] || null
+  form.setFieldValue('imageFile', file)
+}
+
+function onFileClear(form) {
+  form.setFieldValue('imageFile', null)
+}
+
+const initialValues = reactive({
+  name: '',
+  city: '',
+  lat: '',
+  lng: '',
+  type: 'boulder', // or "climb"
+  label: '',
+  length: '',
+  firstAscent: '',
+  description: '',
+  imagePreviewUrl: '',
+  imageFile: null,
+})
+
+const resolver = ({ values }) => {
+  const errors = {}
+
+  if (!values.username) {
+    errors.username = [{ message: 'Username is required.' }]
+  }
+
+  return {
+    values, // (Optional) Used to pass current form values to submit event.
+    errors,
+  }
+}
+
+const onFormSubmit = ({ valid }) => {
+  if (valid) {
+    toast.add({
+      severity: 'success',
+      summary: 'Form is submitted.',
+      life: 3000,
+    })
+  }
+}
+
+const router = useRouter()
+
+const saving = ref(false)
+const errorMsg = ref('')
 
 const form = ref({
-  name: "",
-  city: "",
-  lat: "",
-  lng: "",
-  type: "boulder",     // or "climb"
-  label: "",
-  length: "",
-  firstAscent: "",
-  description: "",
-  imagePreviewUrl: "",
+  name: '',
+  city: '',
+  lat: '',
+  lng: '',
+  type: 'boulder', // or "climb"
+  label: '',
+  length: '',
+  firstAscent: '',
+  description: '',
+  imagePreviewUrl: '',
   imageFile: null,
-});
+})
 
 function onImageChange(e) {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  form.value.imageFile = file;
-  form.value.imagePreviewUrl = URL.createObjectURL(file);
+  const file = e.target.files?.[0]
+  console.log(form.imageFile)
+  if (!file) return
+  form.value.imageFile = file
+  form.value.imagePreviewUrl = URL.createObjectURL(file)
 }
 
 async function save() {
-  errorMsg.value = "";
+  errorMsg.value = ''
 
   if (!form.value.name.trim()) {
-    errorMsg.value = "Name is required.";
-    return;
+    errorMsg.value = 'Name is required.'
+    return
   }
 
-  saving.value = true;
+  saving.value = true
   try {
     // 1) Insert location first (without image_url) and return the created row
     const insertPayload = {
       name: form.value.name.trim(),
       city: form.value.city?.trim() || null,
-      lat: form.value.lat !== "" ? Number(form.value.lat) : null,
-      lng: form.value.lng !== "" ? Number(form.value.lng) : null,
+      lat: form.value.lat !== '' ? Number(form.value.lat) : null,
+      lng: form.value.lng !== '' ? Number(form.value.lng) : null,
       type: form.value.type || null,
       label: form.value.label?.trim() || null,
-      length: form.value.length !== "" ? Number(form.value.length) : null,
+      length: form.value.length !== '' ? Number(form.value.length) : null,
       first_ascent: form.value.firstAscent?.trim() || null,
       description: form.value.description?.trim() || null,
       image_url: null,
-    };
-
-    const { data: createdRows, error: insertError } = await supabase
-      .from("locations")
-      .insert(insertPayload)
-      .select("id")
-      .limit(1);
-
-    if (insertError) {
-      errorMsg.value = insertError.message;
-      return;
     }
 
-    const createdId = createdRows?.[0]?.id;
+    const { data: createdRows, error: insertError } = await supabase
+      .from('locations')
+      .insert(insertPayload)
+      .select('id')
+      .limit(1)
+
+    if (insertError) {
+      errorMsg.value = insertError.message
+      return
+    }
+
+    const createdId = createdRows?.[0]?.id
     if (!createdId) {
-      errorMsg.value = "Could not get created location id.";
-      return;
+      errorMsg.value = 'Could not get created location id.'
+      return
     }
 
     // 2) If user selected an image, upload it
     if (form.value.imageFile) {
-      const file = form.value.imageFile;
+      const file = form.value.imageFile
 
       // create a safe filename
-      const ext = file.name.includes(".") ? file.name.split(".").pop() : "jpg";
-      const filePath = `locations/${createdId}/${crypto.randomUUID()}.${ext}`;
+      const ext = file.name.includes('.') ? file.name.split('.').pop() : 'jpg'
+      const filePath = `locations/${createdId}/${crypto.randomUUID()}.${ext}`
 
       const { error: uploadError } = await supabase.storage
-        .from("location-images")
+        .from('location-images')
         .upload(filePath, file, {
-          cacheControl: "3600",
+          cacheControl: '3600',
           upsert: false,
-          contentType: file.type || "image/*",
-        });
+          contentType: file.type || 'image/*',
+        })
 
       if (uploadError) {
-        errorMsg.value = uploadError.message;
-        return;
+        errorMsg.value = uploadError.message
+        return
       }
 
       // 3) Get public URL for the uploaded file
-      const { data: publicData } = supabase.storage
-        .from("location-images")
-        .getPublicUrl(filePath);
+      const { data: publicData } = supabase.storage.from('location-images').getPublicUrl(filePath)
 
-      const publicUrl = publicData?.publicUrl;
+      const publicUrl = publicData?.publicUrl
       if (!publicUrl) {
-        errorMsg.value = "Upload succeeded, but could not get public URL.";
-        return;
+        errorMsg.value = 'Upload succeeded, but could not get public URL.'
+        return
       }
 
       // 4) Update the location row with image_url
       const { error: updateError } = await supabase
-        .from("locations")
+        .from('locations')
         .update({ image_url: publicUrl })
-        .eq("id", createdId);
+        .eq('id', createdId)
 
       if (updateError) {
-        errorMsg.value = updateError.message;
-        return;
+        errorMsg.value = updateError.message
+        return
       }
     }
 
-    router.push({ name: "home" });
+    router.push({ name: 'home' })
   } finally {
-    saving.value = false;
+    saving.value = false
   }
 }
 
 function cancel() {
-  router.back();
+  router.back()
 }
 </script>
 
 <template>
+  <div class="card flex justify-center">
+    <Form
+      v-slot="$form"
+      :initialValues
+      :resolver
+      @submit="onFormSubmit"
+      class="flex flex-col gap-4 w-full sm:w-56"
+    >
+      <div class="flex flex-col gap-1">
+        <InputText name="username" type="text" placeholder="Username" fluid />
+        <Message v-if="$form.username?.invalid" severity="error" size="small" variant="simple">{{
+          $form.username.error?.message
+        }}</Message>
+
+        <SelectButton name="type" :options="wiki.entryTypes" :allowEmpty="false" />
+        <InputText name="name" type="text" placeholder="Burden of Dreams" fluid />
+        <InputText name="city" type="text" placeholder="Loviisa" fluid />
+        <InputText name="lat" type="text" placeholder="60.42369214824677" fluid />
+        <InputText name="lng" type="text" placeholder="26.135956682637666" fluid />
+        <InputText name="label" placeholder="Route label" />
+        <InputText name="length" placeholder="8" />
+        <InputText name="firstAscent" placeholder="Nalle Hukkataival" />
+        <Editor name="description" />
+        <FileUpload
+          :auto="false"
+          customUpload
+          mode="basic"
+          accept="image/*"
+          :maxFileSize="1000000"
+          chooseLabel="Upload image"
+          @select="onFileSelect($event, $form)"
+          @clear="onFileClear($form)"
+        />
+
+        <div class="image-box">
+          <img v-if="form.imagePreviewUrl" :src="form.imagePreviewUrl" />
+          <label class="upload-btn">
+            Upload image
+            <input type="file" hidden accept="image/*" @change="onImageChange" />
+          </label>
+        </div>
+      </div>
+
+      <Button type="submit" severity="secondary" label="Submit" />
+    </Form>
+  </div>
   <div class="page">
     <h1>Add Location</h1>
 
@@ -190,7 +295,7 @@ function cancel() {
 
       <div class="actions">
         <button class="save" :disabled="saving" @click="save">
-          {{ saving ? "Saving..." : "Save" }}
+          {{ saving ? 'Saving...' : 'Save' }}
         </button>
         <button class="cancel" :disabled="saving" @click="cancel">Cancel</button>
       </div>
@@ -199,8 +304,13 @@ function cancel() {
 </template>
 
 <style scoped>
-.page { padding: 80px 20px 100px; }
-h1 { text-align: center; margin-bottom: 24px; }
+.page {
+  padding: 80px 20px 100px;
+}
+h1 {
+  text-align: center;
+  margin-bottom: 24px;
+}
 
 .error {
   background: #ffe6e6;
@@ -212,7 +322,11 @@ h1 { text-align: center; margin-bottom: 24px; }
   font-size: 14px;
 }
 
-.form { display: flex; flex-direction: column; gap: 16px; }
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 
 .field label {
   font-size: 13px;
@@ -232,7 +346,10 @@ h1 { text-align: center; margin-bottom: 24px; }
   background: white;
 }
 
-textarea { min-height: 80px; resize: vertical; }
+textarea {
+  min-height: 80px;
+  resize: vertical;
+}
 
 .image-box {
   border: 1px dashed #bbb;
@@ -277,3 +394,4 @@ textarea { min-height: 80px; resize: vertical; }
   border-radius: 10px;
 }
 </style>
+
