@@ -13,6 +13,12 @@ const fallbackCenter = [50.9619, 14.0732];
 const loading = ref(false);
 const errorMsg = ref("");
 
+let map
+
+defineExpose({
+  getMap: () => map
+})
+
 onMounted(async () => {
   loading.value = true;
   errorMsg.value = "";
