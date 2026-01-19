@@ -1,24 +1,40 @@
 <script setup>
-import { onMounted, ref } from "vue";
+// Fullscreen map view with UI overlay.
+// Loads locations and displays them as markers.
+
+import { onMounted} from "vue";
 import L from "leaflet";
-import { supabase } from "@/lib/supabase";
+import SearchBar from "@/components/SearchBar.vue";
 
 import "leaflet/dist/leaflet.css";
 import iconUrl from "leaflet/dist/images/marker-icon.png";
 import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
 import shadowUrl from "leaflet/dist/images/marker-shadow.png";
 
+import { useOnline, useDocumentVisibility } from "@vueuse/core";
+import { useLocations } from "@/composables/useLocations";
+
 const fallbackCenter = [50.9619, 14.0732];
 
-const loading = ref(false);
-const errorMsg = ref("");
+//Composer Toolbox quest
+const { locations, loading, errorMsg, reload } = useLocations();
+
+// VueUse: reactive online/offline state
+const isOnline = useOnline();
+
+// VueUse: track browser tab visibility
+const visibility = useDocumentVisibility();
+
+let map;
+
+//expose
+defineExpose({
+  getMap: () => map,
+});
 
 onMounted(async () => {
-  loading.value = true;
-  errorMsg.value = "";
-
-  // 1) Create map
-  const map = L.map("map", {
+  // 1) Create map (assign to outer variable, do NOT redeclare)
+  map = L.map("map", {
     center: fallbackCenter,
     zoom: 8,
   });
@@ -40,29 +56,13 @@ onMounted(async () => {
   });
   L.Marker.prototype.options.icon = DefaultIcon;
 
-  // 3) Fetch locations from Supabase
-  const { data, error } = await supabase
-    .from("locations")
-    .select(
-      "id, name, city, lat, lng, type, label, length, first_ascent, description, image_url"
-    )
-    .order("created_at", { ascending: false });
-
-  loading.value = false;
-
-  if (error) {
-    errorMsg.value = error.message;
-    return;
-  }
-
-  const locations = (data ?? []).filter(
-    (x) => typeof x.lat === "number" && typeof x.lng === "number"
-  );
+  // 3) Load locations via composable (shared across components)
+  await reload();
 
   // 4) Add markers
   const bounds = [];
 
-  for (const loc of locations) {
+  for (const loc of locations.value) {
     const position = [loc.lat, loc.lng];
     bounds.push(position);
 
@@ -150,12 +150,8 @@ onMounted(async () => {
       <!-- EXIT BUTTON -->
       <button class="exit-button">Exit</button>
 
-      <!-- SEARCH BAR -->
-      <div class="search-bar">
-        <span class="search-icon">🔍</span>
-        <input type="text" placeholder="Search" />
-      </div>
-
+      <!-- Komponenten Quest -->
+      <SearchBar v-model="mapSearch" placeholder="Search..." />
       <!-- FILTER TAGS -->
       <div class="filter-row">
         <button class="filter-tag">🧗</button>
@@ -172,6 +168,14 @@ onMounted(async () => {
         <button class="nav-btn">📘</button>
         <button class="nav-btn">👤</button>
       </footer>
+      <!-- VueUse status indicators -->
+        <div class="status" v-if="!isOnline">
+          You are offline – map data may be outdated.
+        </div>
+
+        <div class="status" v-else-if="visibility === 'hidden'">
+          Tab is not active.
+        </div>
     </div>
   </div>
 </template>
@@ -219,18 +223,6 @@ onMounted(async () => {
 }
 
 /* SEARCH BAR */
-.search-bar {
-  margin-top: 40px;
-  width: calc(100% - 40px);
-  margin-left: auto;
-  margin-right: auto;
-  padding: 8px 12px;
-  background: #ddd;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-}
-
 .search-bar input {
   flex: 1;
   border: none;

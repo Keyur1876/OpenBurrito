@@ -1,4 +1,7 @@
 <script setup>
+// View for creating a new climbing location.
+// Handles form state, validation, image upload,
+// and saving the location to Supabase.
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { supabase } from "@/lib/supabase";
@@ -52,7 +55,7 @@ async function save() {
       description: form.value.description?.trim() || null,
       image_url: null,
     };
-
+    // Validate required fields before saving
     const { data: createdRows, error: insertError } = await supabase
       .from("locations")
       .insert(insertPayload)
@@ -180,8 +183,11 @@ function cancel() {
         <textarea v-model="form.description" placeholder="" />
       </div>
 
+      <!-- v-else -->
       <div class="image-box">
         <img v-if="form.imagePreviewUrl" :src="form.imagePreviewUrl" />
+        <div v-else class="placeholder">No image selected yet</div>
+
         <label class="upload-btn">
           Upload image
           <input type="file" hidden accept="image/*" @change="onImageChange" />
@@ -276,4 +282,11 @@ textarea { min-height: 80px; resize: vertical; }
   padding: 10px 18px;
   border-radius: 10px;
 }
+
+.placeholder {
+  padding: 18px 10px;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
 </style>
