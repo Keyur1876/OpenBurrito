@@ -27,6 +27,7 @@ const visibility = useDocumentVisibility();
 
 let map;
 
+//expose
 defineExpose({
   getMap: () => map,
 });
