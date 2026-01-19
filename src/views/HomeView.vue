@@ -1,31 +1,36 @@
 <script setup>
+// Main map view displaying all locations.
+// Integrates Leaflet, search functionality,
+// and map marker interaction.
 import { onMounted, ref, computed, watch } from 'vue'
 import L from 'leaflet'
 import { supabase } from '@/lib/supabase'
-
+import SearchBar from '@/components/SearchBar.vue'
 import 'leaflet/dist/leaflet.css'
 import iconUrl from 'leaflet/dist/images/marker-icon.png'
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
-
+import { refDebounced } from '@vueuse/core'
+import { useLocations } from '@/composables/useLocations'
 import { useLocationStore } from '@/stores/location'
 
 const geo = useLocationStore()
 
 // DB LOCATIONS
-const locations = ref([])
-
+//Composer Toolbox quest
+const { locations} = useLocations()
 // SEARCH STATE
 const query = ref('')
+// VueUse
+const debouncedQuery = refDebounced(query, 250)
 const showDropdown = ref(false)
 
 // SEARCH FILTER (case-insensitive)
+// VueUse
 const filteredLocations = computed(() => {
-  const q = query.value.trim().toLowerCase()
+  const q = debouncedQuery.value.trim().toLowerCase()
   if (!q) return []
-  return locations.value.filter((l) =>
-    l.name?.toLowerCase().includes(q)
-  )
+  return locations.value.filter((l) => l.name?.toLowerCase().includes(q))
 })
 
 // LEAFLET
@@ -97,12 +102,13 @@ onMounted(async () => {
     return
   }
 
+  // Filter locations based on search query
   locations.value = (data ?? []).filter(
     (l) => typeof l.lat === 'number' && typeof l.lng === 'number'
   )
 
   const bounds = L.latLngBounds([])
-
+  // Watch user geolocation once and center map
   locations.value.forEach((l) => {
     const marker = L.marker([l.lat, l.lng]).addTo(map)
 
@@ -179,42 +185,38 @@ onMounted(async () => {
     <div id="map"></div>
 
     <div class="overlay">
+      <!--Komponenten Quest -->
       <div class="search-wrap">
-        <div class="search-bar">
-          <span class="search-icon">🔍</span>
-
-          <input
+          <SearchBar
             v-model="query"
-            type="text"
             placeholder="Search boulders..."
             @focus="showDropdown = true"
-            @input="showDropdown = true"
-            @keydown.esc="clearSearch"
+            @clear="clearSearch"
           />
-
-          <button v-if="query" class="clear-btn" @click="clearSearch">✕</button>
-        </div>
-
-        <!-- DROPDOWN-->
-        <div v-if="showDropdown && filteredLocations.length" class="dropdown">
-          <button
-            v-for="b in filteredLocations"
-            :key="b.id"
-            class="dropdown-item"
-            @click="selectLocation(b)"
-          >
-            <div class="name">{{ b.name }}</div>
-            <div class="city">{{ b.city }}</div>
-          </button>
-        </div>
-
-        <!-- no results" -->
+        <!-- DROPDOWN v-else -->
         <div
-          v-else-if="showDropdown && query.trim() && filteredLocations.length === 0"
-          class="dropdown empty"
+          v-if="showDropdown && query.trim()"
+          class="dropdown"
+          @mousedown.prevent
         >
-          No results
+          <template v-if="filteredLocations.length">
+            <button
+              v-for="b in filteredLocations"
+              :key="b.id"
+              type="button"
+              class="dropdown-item"
+              @click="selectLocation(b)"
+            >
+              <div class="name">{{ b.name }}</div>
+              <div class="city">{{ b.city }}</div>
+            </button>
+          </template>
+
+          <div v-else class="dropdown-empty">
+            No results
+          </div>
         </div>
+
       </div>
     </div>
   </div>
@@ -250,42 +252,30 @@ onMounted(async () => {
   position: relative;
 }
 
-.search-bar {
-  width: 100%;
-  padding: 8px 12px;
-  background: #ddd;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.search-bar input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  font-size: 14px;
-  outline: none;
-}
-
-.clear-btn {
-  border: none;
-  background: white;
-  border-radius: 8px;
-  width: 28px;
-  height: 28px;
-  cursor: pointer;
-}
-
 /* DROPDOWN */
 .dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+
   margin-top: 8px;
   background: white;
   border-radius: 12px;
   border: 1px solid #ccc;
   overflow: hidden;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 9999;
 }
+
+.dropdown-empty {
+  padding: 10px 12px;
+  color: #444;
+}
+
 
 .dropdown-item {
   width: 100%;
