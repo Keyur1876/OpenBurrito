@@ -5,6 +5,7 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { supabase } from "@/lib/supabase";
+import BaseCard from "@/components/BaseCard.vue";
 
 const router = useRouter();
 
@@ -130,77 +131,84 @@ function cancel() {
 
 <template>
   <div class="page">
-    <h1>Add Location</h1>
+    <BaseCard>
+      <template #header>
+        <h1>Add Location</h1>
+      </template>
 
-    <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
+      <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
 
-    <div class="form">
-      <div class="field">
-        <label>Name</label>
-        <input v-model="form.name" placeholder="" />
+      <div class="form">
+        <div class="field">
+          <label>Name</label>
+          <input v-model="form.name" placeholder="" />
+        </div>
+
+        <div class="field">
+          <label>City</label>
+          <input v-model="form.city" placeholder="" />
+        </div>
+
+        <div class="field">
+          <label>Latitude</label>
+          <input v-model="form.lat" placeholder="" inputmode="decimal" />
+        </div>
+
+        <div class="field">
+          <label>Longitude</label>
+          <input v-model="form.lng" placeholder="" inputmode="decimal" />
+        </div>
+
+        <div class="field">
+          <label>Type</label>
+          <select v-model="form.type">
+            <option value="boulder">Boulder</option>
+            <option value="climb">Klettern</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Label</label>
+          <input v-model="form.label" placeholder="Route label" />
+        </div>
+
+        <div class="field">
+          <label>Length in meter</label>
+          <input v-model="form.length" placeholder="Example: 42" inputmode="numeric" />
+        </div>
+
+        <div class="field">
+          <label>First Ascent</label>
+          <input v-model="form.firstAscent" placeholder="" />
+        </div>
+
+        <div class="field">
+          <label>Description</label>
+          <textarea v-model="form.description" placeholder="" />
+        </div>
+
+        <div class="image-box">
+          <img v-if="form.imagePreviewUrl" :src="form.imagePreviewUrl" />
+          <div v-else class="placeholder">No image selected yet</div>
+
+          <label class="upload-btn">
+            Upload image
+            <input type="file" hidden accept="image/*" @change="onImageChange" />
+          </label>
+        </div>
+
+        <div class="actions">
+          <button class="save" :disabled="saving" @click="save">
+            {{ saving ? "Saving..." : "Save" }}
+          </button>
+          <button class="cancel" :disabled="saving" @click="cancel">Cancel</button>
+        </div>
       </div>
 
-      <div class="field">
-        <label>City</label>
-        <input v-model="form.city" placeholder="" />
-      </div>
-
-      <div class="field">
-        <label>Latitude</label>
-        <input v-model="form.lat" placeholder="" inputmode="decimal" />
-      </div>
-
-      <div class="field">
-        <label>Longitude</label>
-        <input v-model="form.lng" placeholder="" inputmode="decimal" />
-      </div>
-
-      <div class="field">
-        <label>Type</label>
-        <select v-model="form.type">
-          <option value="boulder">Boulder</option>
-          <option value="climb">Klettern</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Label</label>
-        <input v-model="form.label" placeholder="Route label" />
-      </div>
-
-      <div class="field">
-        <label>Length in meter</label>
-        <input v-model="form.length" placeholder="Example: 42" inputmode="numeric" />
-      </div>
-
-      <div class="field">
-        <label>First Ascent</label>
-        <input v-model="form.firstAscent" placeholder="" />
-      </div>
-
-      <div class="field">
-        <label>Description</label>
-        <textarea v-model="form.description" placeholder="" />
-      </div>
-
-      <!-- v-else -->
-      <div class="image-box">
-        <img v-if="form.imagePreviewUrl" :src="form.imagePreviewUrl" />
-        <div v-else class="placeholder">No image selected yet</div>
-
-        <label class="upload-btn">
-          Upload image
-          <input type="file" hidden accept="image/*" @change="onImageChange" />
-        </label>
-      </div>
-
-      <div class="actions">
-        <button class="save" :disabled="saving" @click="save">
-          {{ saving ? "Saving..." : "Save" }}
-        </button>
-        <button class="cancel" :disabled="saving" @click="cancel">Cancel</button>
-      </div>
-    </div>
+      <template #footer>
+        <small>Tip: Adding an image makes the Wiki and Map look nicer.</small>
+      </template>
+    </BaseCard>
   </div>
 </template>
 
