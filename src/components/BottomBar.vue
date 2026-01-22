@@ -8,7 +8,7 @@ const buttons = [
   { icon: 'pi pi-plus', route: '/add' },
   { icon: 'pi pi-map', route: '/' },
   { icon: 'pi pi-book', route: '/wiki' },
-  { icon: 'pi pi-user', route: '/' },
+  { icon: 'pi pi-user', route: '/profile' },
 ]
 </script>
 
