@@ -1,55 +1,58 @@
 <template>
-  <Card @click="opened = true" class="overflow-hidden cursor-pointer">
-    <template #header>
-      <div class="h-20 overflow-hidden">
-        <Image :src="entry.image_url" />
-      </div>
-    </template>
-    <template #title>
-      <div class="flex items-center">
-        <i v-if="isBoulder" class="pi pi-sort-up-fill" />
-        <i v-else class="pi pi-flag-fill" />
-        <h3 class="pl-5">{{ entry.name }}</h3>
-      </div>
-    </template>
-  </Card>
-
-  <Dialog v-model:visible="opened" modal :breakpoints="{ '1199px': '75vw', '575px': '90vw' }">
-    <template #header>
-      <EntryHeader :entry="entry" />
-    </template>
-    <Entry :entry="entry" />
-  </Dialog>
+  <div class="wiki-card" @click="$emit('open', entry)">
+    <img v-if="entry.image_url" :src="entry.image_url" class="thumb" />
+    <div class="body">
+      <div class="title">{{ entry.name }}</div>
+      <div class="subtitle" v-if="entry.city">{{ entry.city }}</div>
+      <div class="meta">{{ entry.type }}</div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { Card, Dialog, Image } from 'primevue'
-import { ref, computed } from 'vue'
-import { Entry, EntryHeader } from '@/components/wiki'
+defineEmits(["open"]);
 
-const opened = ref(false)
-
-const props = defineProps({
+defineProps({
   entry: {
     type: Object,
-    default: {
-      id: 1,
-      name: 'Lokomotive Rock',
-      city: 'Dresden',
-      lat: 50.96658,
-      lng: 14.08351,
-      type: 'boulder',
-      length: '30',
-      first_ascent: 'Adam Ondra',
-      description:
-        'A distinctive sandstone formation near Kurort Rathen. Popular in the Saxon Switzerland area for traditional climbing and bouldering-style problems on solid sandstone.',
-      image_url:
-        'https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fgripped.com%2Fwp-content%2Fuploads%2F2024%2F03%2Fbosiburden.jpg&f=1&nofb=1&ipt=d6450989fa320bb5fee6702ad00e25b19e161bc20cd721b3be02f1b205dca09a',
-    },
+    required: true,
   },
-})
-
-const isBoulder = computed(() => {
-  return props.entry.type.toLowerCase() === 'boulder'
-})
+});
 </script>
+
+<style scoped>
+.wiki-card {
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,.12);
+  background: white;
+  cursor: pointer;
+  transition: transform .08s ease;
+}
+.wiki-card:hover {
+  transform: scale(1.01);
+}
+.thumb {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+.body {
+  padding: 10px 12px;
+}
+.title {
+  font-weight: 800;
+  font-size: 16px;
+}
+.subtitle {
+  opacity: 0.7;
+  font-size: 13px;
+  margin-top: 2px;
+}
+.meta {
+  margin-top: 6px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+</style>
