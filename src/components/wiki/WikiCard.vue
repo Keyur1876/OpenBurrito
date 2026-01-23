@@ -2,7 +2,7 @@
   <Card @click="opened = true" class="overflow-hidden cursor-pointer">
     <template #header>
       <div class="h-20 overflow-hidden">
-        <Image :src="entry.image" />
+        <Image :src="entry.image_url" />
       </div>
     </template>
     <template #title>
@@ -34,13 +34,17 @@ const props = defineProps({
     type: Object,
     default: {
       id: 1,
-      type: 'Boulder',
       name: 'Lokomotive Rock',
+      city: 'Dresden',
       lat: 50.96658,
       lng: 14.08351,
-      image: '/images/istockphoto1.jpg',
+      type: 'boulder',
+      length: '30',
+      first_ascent: 'Adam Ondra',
       description:
         'A distinctive sandstone formation near Kurort Rathen. Popular in the Saxon Switzerland area for traditional climbing and bouldering-style problems on solid sandstone.',
+      image_url:
+        'https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fgripped.com%2Fwp-content%2Fuploads%2F2024%2F03%2Fbosiburden.jpg&f=1&nofb=1&ipt=d6450989fa320bb5fee6702ad00e25b19e161bc20cd721b3be02f1b205dca09a',
     },
   },
 })

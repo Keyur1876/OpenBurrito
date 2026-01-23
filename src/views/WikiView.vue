@@ -15,8 +15,14 @@ import { useWikiStore } from '@/stores/wiki'
 import { DataView } from 'primevue'
 import { ref, computed } from 'vue'
 import { WikiCard, WikiSearch, WikiTopBar } from '@/components/wiki'
+import { useLocations } from '@/composables/useLocations'
 
 const wiki = useWikiStore()
+
+const { locations, reload } = useLocations()
+
+reload()
+console.log(locations.value)
 
 const entries = computed(() => {
   function filter(e) {
@@ -29,6 +35,6 @@ const entries = computed(() => {
     return matchSearch && matchFilter
   }
 
-  return wiki.entries.filter(filter)
+  return locations.value.filter(filter)
 })
 </script>

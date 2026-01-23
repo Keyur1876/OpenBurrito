@@ -1,13 +1,13 @@
 <template>
-  <Image :src="props.entry.image" />
+  <Image :src="props.entry.image_url" />
   <Fieldset legend="Description">
     {{ entry.description }}
   </Fieldset>
-  <OrderList v-if="isBoulder" v-model="relatedClimbs" dataKey="id">
+  <!--OrderList v-if="isBoulder" v-model="relatedClimbs" dataKey="id">
     <template #option="{ option }">
       {{ option.name }}
     </template>
-  </OrderList>
+  </OrderList-->
 </template>
 
 <script setup>
@@ -29,16 +29,4 @@ const isBoulder = computed(() => {
 
 // WARN: undefined for climbs
 const relatedClimbs = wiki.entries.filter((i) => i.location === props.entry.id)
-
-const init = ref({
-  name: 'Test',
-})
-
-const onFormSubmit = ({ valid }) => {
-  if (valid) {
-    console.log('Tes')
-  }
-}
 </script>
-
-<style scoped></style>
