@@ -4,6 +4,7 @@ import WikiView from '@/views/WikiView.vue'
 import Doc from '@/views/Doc.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import AboutView from '@/views/AboutView.vue'
+import AddLocationView from '@/views/AddLocationView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -17,6 +18,12 @@ const router = createRouter({
       path: '/wiki',
       name: 'wiki',
       component: WikiView,
+    },
+    {
+      path: "/wiki/:id",
+      name: "wiki-detail",
+      component: WikiView,
+      props: true,
     },
     {
       path: '/doc',
@@ -36,9 +43,9 @@ const router = createRouter({
     {
       path: "/add",
       name: "add",
-      component: () => import("@/views/AddLocationView.vue"),
+      component: AddLocationView,
     },
   ],
- })
+})
 
 export default router

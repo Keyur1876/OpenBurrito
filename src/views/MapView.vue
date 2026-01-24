@@ -36,49 +36,63 @@ defineExpose({
   getMap: () => map,
 });
 
-function safe(v) {
-  return v ? String(v) : "";
+
+function esc(s) {
+  const str = s ? String(s) : "";
+  return str.replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  }[c]));
 }
 
 function buildPopupHtml(loc) {
   return `
     <div style="max-width:240px">
       <div style="font-weight:700; font-size:14px; margin-bottom:6px;">
-        ${safe(loc.name)}
+        ${esc(loc.name)}
       </div>
 
       ${
         loc.image_url
-          ? `<img src="${safe(loc.image_url)}" alt="${safe(
-              loc.name
-            )}" style="width:100%; border-radius:10px; margin-bottom:8px;" />`
+          ? `<img
+              src="${esc(loc.image_url)}"
+              alt="${esc(loc.name)}"
+              style="width:100%; border-radius:10px; margin-bottom:8px;"
+            />`
           : ""
       }
 
-      <div style="font-size:12px; opacity:.85; margin-bottom:6px;">
-        ${safe(loc.city)}
-      </div>
+      ${
+        loc.city
+          ? `<div style="font-size:12px; opacity:.85; margin-bottom:6px;">
+              ${esc(loc.city)}
+            </div>`
+          : ""
+      }
 
       <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
         ${
           loc.type
-            ? `<span style="border:1px solid #ccc; padding:2px 8px; border-radius:999px; font-size:12px;">${safe(
-                loc.type
-              )}</span>`
+            ? `<span style="border:1px solid #ccc; padding:2px 8px; border-radius:999px; font-size:12px;">
+                ${esc(loc.type)}
+              </span>`
             : ""
         }
         ${
           loc.label
-            ? `<span style="border:1px solid #ccc; padding:2px 8px; border-radius:999px; font-size:12px;">${safe(
-                loc.label
-              )}</span>`
+            ? `<span style="border:1px solid #ccc; padding:2px 8px; border-radius:999px; font-size:12px;">
+                ${esc(loc.label)}
+              </span>`
             : ""
         }
         ${
           loc.length
-            ? `<span style="border:1px solid #ccc; padding:2px 8px; border-radius:999px; font-size:12px;">${safe(
-                loc.length
-              )} m</span>`
+            ? `<span style="border:1px solid #ccc; padding:2px 8px; border-radius:999px; font-size:12px;">
+                ${esc(loc.length)} m
+              </span>`
             : ""
         }
       </div>
@@ -86,18 +100,36 @@ function buildPopupHtml(loc) {
       ${
         loc.first_ascent
           ? `<div style="font-size:12px; margin-bottom:6px;">
-              <strong>First ascent:</strong> ${safe(loc.first_ascent)}
+              <strong>First ascent:</strong> ${esc(loc.first_ascent)}
             </div>`
           : ""
       }
 
       ${
         loc.description
-          ? `<div style="font-size:12px; line-height:1.3;">
-              ${safe(loc.description)}
+          ? `<div style="font-size:12px; line-height:1.3; margin-bottom:10px;">
+              ${esc(loc.description)}
             </div>`
           : ""
       }
+
+      <button
+        type="button"
+        class="wiki-open-btn"
+        data-wiki-id="${esc(loc.id)}"
+        style="
+          width:100%;
+          padding:8px 10px;
+          border-radius:12px;
+          border:1px solid rgba(0,0,0,.12);
+          background:#fff;
+          font-size:13px;
+          font-weight:600;
+          cursor:pointer;
+        "
+      >
+        Open in Wiki →
+      </button>
     </div>
   `;
 }
@@ -138,7 +170,32 @@ function renderMarkers() {
 
     const popupHtml = buildPopupHtml(loc);
 
-    L.marker(position).bindPopup(popupHtml).addTo(markerLayer);
+    const marker = L.marker(position).addTo(markerLayer);
+    
+    marker.bindPopup(popupHtml);
+
+    marker.on("popupopen", (e) => {
+      const el = e.popup.getElement();
+      if (!el) return;
+
+      const btn = el.querySelector(".wiki-open-btn");
+      if (!btn) return;
+
+      if (btn.dataset.bound === "1") return;
+      btn.dataset.bound = "1";
+
+      btn.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+
+        const id = btn.dataset.wikiId;
+        if (!id) return;
+
+        router.push({ name: "wiki-detail", params: { id } });
+      });
+    });
+
+
   }
 
   // Only fit if we have results; otherwise keep current view
@@ -192,23 +249,6 @@ watch(
   () => renderMarkers(),
   { deep: true }
 );
-
-function exit() {
-  // adjust route if you want a different target
-  routerPushSafe("/profile");
-}
-
-function routerPushSafe(path) {
-  // keep it super safe in case router isn't ready
-  try {
-    // useRouter already exists
-    // eslint-disable-next-line no-undef
-    // (we're in <script setup>, router is in scope below)
-    router.push(path);
-  } catch {
-    // ignore
-  }
-}
 
 import { useRouter } from "vue-router";
 const router = useRouter();

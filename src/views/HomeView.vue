@@ -11,13 +11,13 @@ import iconUrl from "leaflet/dist/images/marker-icon.png";
 import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
 import shadowUrl from "leaflet/dist/images/marker-shadow.png";
 import { refDebounced } from "@vueuse/core";
-
 import { useLocations } from "@/composables/useLocations";
 import { useLocationStore } from "@/stores/location";
+import { useRouter } from "vue-router";
 
 const geo = useLocationStore();
 const { locations, loading, errorMsg, reload } = useLocations();
-
+const router = useRouter();
 const fallbackCenter = [50.9619, 14.0732];
 
 // SEARCH
@@ -54,41 +54,95 @@ function esc(s) {
   }[c]));
 }
 
+
 function buildPopupHtml(l) {
   return `
-    <div class="loc-popup">
+    <div class="loc-popup" style="max-width:260px">
+
       ${
         l.image_url
-          ? `<div class="loc-popup__media">
-              <img src="${esc(l.image_url)}" alt="${esc(l.name)}" />
+          ? `
+          <div style="margin-bottom:8px">
+            <img
+              src="${esc(l.image_url)}"
+              alt="${esc(l.name)}"
+              style="width:100%; border-radius:12px;"
+            />
+          </div>
+        `
+          : ""
+      }
+
+      <div style="font-weight:700; font-size:15px; margin-bottom:4px;">
+        ${esc(l.name)}
+      </div>
+
+      ${
+        l.city
+          ? `<div style="font-size:12px; opacity:.75; margin-bottom:6px;">
+              ${esc(l.city)}
             </div>`
           : ""
       }
 
-      <div class="loc-popup__body">
-        <div class="loc-popup__title">${esc(l.name)}</div>
-        ${l.city ? `<div class="loc-popup__subtitle">${esc(l.city)}</div>` : ""}
-
-        <div class="loc-popup__chips">
-          ${l.type ? `<span class="chip">${esc(l.type)}</span>` : ""}
-          ${l.label ? `<span class="chip">${esc(l.label)}</span>` : ""}
-          ${l.length ? `<span class="chip">${esc(l.length)} m</span>` : ""}
-        </div>
-
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
         ${
-          l.first_ascent
-            ? `<div class="loc-popup__meta"><strong>First ascent:</strong> ${esc(
-                l.first_ascent
-              )}</div>`
+          l.type
+            ? `<span style="border:1px solid rgba(0,0,0,.15); padding:2px 8px; border-radius:999px; font-size:12px;">
+                ${esc(l.type)}
+              </span>`
             : ""
         }
-
         ${
-          l.description
-            ? `<div class="loc-popup__desc">${esc(l.description)}</div>`
+          l.label
+            ? `<span style="border:1px solid rgba(0,0,0,.15); padding:2px 8px; border-radius:999px; font-size:12px;">
+                ${esc(l.label)}
+              </span>`
+            : ""
+        }
+        ${
+          l.length
+            ? `<span style="border:1px solid rgba(0,0,0,.15); padding:2px 8px; border-radius:999px; font-size:12px;">
+                ${esc(l.length)} m
+              </span>`
             : ""
         }
       </div>
+
+      ${
+        l.first_ascent
+          ? `<div style="font-size:12px; margin-bottom:6px;">
+              <strong>First ascent:</strong> ${esc(l.first_ascent)}
+            </div>`
+          : ""
+      }
+
+      ${
+        l.description
+          ? `<div style="font-size:12px; line-height:1.35; margin-bottom:10px;">
+              ${esc(l.description)}
+            </div>`
+          : ""
+      }
+
+      <button
+        type="button"
+        class="wiki-open-btn"
+        data-wiki-id="${esc(l.id)}"
+        style="
+          width:100%;
+          padding:8px 10px;
+          border-radius:12px;
+          border:1px solid rgba(0,0,0,.15);
+          background:#fff;
+          font-size:13px;
+          font-weight:600;
+          cursor:pointer;
+        "
+      >
+        Open in Wiki →
+      </button>
+
     </div>
   `;
 }
@@ -111,6 +165,29 @@ function renderMarkers() {
       maxWidth: 360,
       autoPanPadding: [20, 20],
     });
+
+    marker.on("popupopen", (e) => {
+    const el = e.popup.getElement();
+    if (!el) return;
+
+    const btn = el.querySelector(".wiki-open-btn");
+    if (!btn) return;
+
+    // Avoid stacking listeners if popup opens multiple times
+    if (btn.dataset.bound === "1") return;
+    btn.dataset.bound = "1";
+
+    btn.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+
+      const id = btn.dataset.wikiId;
+      if (!id) return;
+
+      router.push({ name: "wiki-detail", params: { id } });
+    });
+  });
+
 
     markersById.set(l.id, marker);
     bounds.extend([l.lat, l.lng]);
