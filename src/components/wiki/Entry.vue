@@ -1,44 +1,53 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <Image :src="props.entry.image" />
-  <Fieldset legend="Description">
-    {{ entry.description }}
-  </Fieldset>
-  <OrderList v-if="isBoulder" v-model="relatedClimbs" dataKey="id">
-    <template #option="{ option }">
-      {{ option.name }}
-    </template>
-  </OrderList>
+  <div class="entry-detail">
+
+    <!-- Image -->
+    <Image
+      v-if="entry.image_url"
+      :src="entry.image_url"
+      imageClass="w-full rounded-xl mb-3"
+    />
+
+    <!-- Title -->
+    <h2 class="text-2xl font-bold mb-1">
+      {{ entry.name }}
+    </h2>
+
+    <!-- City -->
+    <div v-if="entry.city" class="text-sm opacity-70 mb-3">
+      📍 {{ entry.city }}
+    </div>
+
+    <!-- Meta -->
+    <div class="flex gap-2 flex-wrap mb-3">
+      <span v-if="entry.type" class="chip">{{ entry.type }} - {{ entry.label }} - {{ entry.length }} m</span>
+    </div>
+
+    <!-- Description -->
+    <Fieldset legend="Description">
+      {{ entry.description }}
+    </Fieldset>
+
+  </div>
 </template>
 
 <script setup>
-import { Image, OrderList, Fieldset } from 'primevue'
-import { ref, computed } from 'vue'
-import { useWikiStore } from '@/stores/wiki'
+import { Image, Fieldset } from "primevue";
 
-const wiki = useWikiStore()
-
-const props = defineProps({
+defineProps({
   entry: {
     type: Object,
+    required: true,
   },
-})
-
-const isBoulder = computed(() => {
-  return props.entry.type.toLowerCase() === 'boulder'
-})
-
-// WARN: undefined for climbs
-const relatedClimbs = wiki.entries.filter((i) => i.location === props.entry.id)
-
-const init = ref({
-  name: 'Test',
-})
-
-const onFormSubmit = ({ valid }) => {
-  if (valid) {
-    console.log('Tes')
-  }
-}
+});
 </script>
 
-<style scoped></style>
+<style scoped>
+.chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid rgba(0,0,0,.15);
+}
+</style>

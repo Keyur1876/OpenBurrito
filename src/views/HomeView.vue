@@ -1,78 +1,236 @@
 <script setup>
-import { onMounted, ref, computed, watch } from 'vue'
-import L from 'leaflet'
-import { supabase } from '@/lib/supabase'
+// Main map view displaying all locations.
+// Integrates Leaflet, search dropdown,
+// and marker interaction.
 
-import 'leaflet/dist/leaflet.css'
-import iconUrl from 'leaflet/dist/images/marker-icon.png'
-import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
-import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
+import { onMounted, ref, computed, watch } from "vue";
+import L from "leaflet";
+import SearchBar from "@/components/SearchBar.vue";
+import "leaflet/dist/leaflet.css";
+import iconUrl from "leaflet/dist/images/marker-icon.png";
+import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
+import shadowUrl from "leaflet/dist/images/marker-shadow.png";
+import { refDebounced } from "@vueuse/core";
+import { useLocations } from "@/composables/useLocations";
+import { useLocationStore } from "@/stores/location";
+import { useRouter } from "vue-router";
 
-import { useLocationStore } from '@/stores/location'
+const geo = useLocationStore();
+const { locations, loading, errorMsg, reload } = useLocations();
+const router = useRouter();
+const fallbackCenter = [50.9619, 14.0732];
 
-const geo = useLocationStore()
+// SEARCH
+const query = ref("");
+const debouncedQuery = refDebounced(query, 250);
+const showDropdown = ref(false);
 
-// DB LOCATIONS
-const locations = ref([])
-
-// SEARCH STATE
-const query = ref('')
-const showDropdown = ref(false)
-
-// SEARCH FILTER (case-insensitive)
 const filteredLocations = computed(() => {
-  const q = query.value.trim().toLowerCase()
-  if (!q) return []
-  return locations.value.filter((l) =>
-    l.name?.toLowerCase().includes(q)
-  )
-})
+  const q = debouncedQuery.value.trim().toLowerCase();
+  if (!q) return [];
+
+  return (locations.value || []).filter((l) => {
+    const haystack = [l.name, l.city, l.label, l.type]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(q);
+  });
+});
 
 // LEAFLET
-let map
-const markersById = new Map()
+let map;
+let markerLayer;
+const markersById = new Map();
+
+function esc(s) {
+  const str = s ? String(s) : "";
+  return str.replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  }[c]));
+}
+
+
+function buildPopupHtml(l) {
+  return `
+    <div class="loc-popup" style="max-width:260px">
+
+      ${
+        l.image_url
+          ? `
+          <div style="margin-bottom:8px">
+            <img
+              src="${esc(l.image_url)}"
+              alt="${esc(l.name)}"
+              style="width:100%; border-radius:12px;"
+            />
+          </div>
+        `
+          : ""
+      }
+
+      <div style="font-weight:700; font-size:15px; margin-bottom:4px;">
+        ${esc(l.name)}
+      </div>
+
+      ${
+        l.city
+          ? `<div style="font-size:12px; opacity:.75; margin-bottom:6px;">
+              ${esc(l.city)}
+            </div>`
+          : ""
+      }
+
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
+        ${
+          l.type
+            ? `<span style="border:1px solid rgba(0,0,0,.15); padding:2px 8px; border-radius:999px; font-size:12px;">
+                ${esc(l.type)}
+              </span>`
+            : ""
+        }
+        ${
+          l.label
+            ? `<span style="border:1px solid rgba(0,0,0,.15); padding:2px 8px; border-radius:999px; font-size:12px;">
+                ${esc(l.label)}
+              </span>`
+            : ""
+        }
+        ${
+          l.length
+            ? `<span style="border:1px solid rgba(0,0,0,.15); padding:2px 8px; border-radius:999px; font-size:12px;">
+                ${esc(l.length)} m
+              </span>`
+            : ""
+        }
+      </div>
+
+      ${
+        l.first_ascent
+          ? `<div style="font-size:12px; margin-bottom:6px;">
+              <strong>First ascent:</strong> ${esc(l.first_ascent)}
+            </div>`
+          : ""
+      }
+
+      ${
+        l.description
+          ? `<div style="font-size:12px; line-height:1.35; margin-bottom:10px;">
+              ${esc(l.description)}
+            </div>`
+          : ""
+      }
+
+      <button
+        type="button"
+        class="wiki-open-btn"
+        data-wiki-id="${esc(l.id)}"
+        style="
+          width:100%;
+          padding:8px 10px;
+          border-radius:12px;
+          border:1px solid rgba(0,0,0,.15);
+          background:#fff;
+          font-size:13px;
+          font-weight:600;
+          cursor:pointer;
+        "
+      >
+        Open in Wiki →
+      </button>
+
+    </div>
+  `;
+}
+
+function renderMarkers() {
+  if (!map || !markerLayer) return;
+
+  markerLayer.clearLayers();
+  markersById.clear();
+
+  const bounds = L.latLngBounds([]);
+
+  for (const l of locations.value || []) {
+    if (typeof l.lat !== "number" || typeof l.lng !== "number") continue;
+
+    const marker = L.marker([l.lat, l.lng]).addTo(markerLayer);
+
+    marker.bindPopup(buildPopupHtml(l), {
+      className: "leaflet-popup--loc",
+      maxWidth: 360,
+      autoPanPadding: [20, 20],
+    });
+
+    marker.on("popupopen", (e) => {
+    const el = e.popup.getElement();
+    if (!el) return;
+
+    const btn = el.querySelector(".wiki-open-btn");
+    if (!btn) return;
+
+    // Avoid stacking listeners if popup opens multiple times
+    if (btn.dataset.bound === "1") return;
+    btn.dataset.bound = "1";
+
+    btn.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+
+      const id = btn.dataset.wikiId;
+      if (!id) return;
+
+      router.push({ name: "wiki-detail", params: { id } });
+    });
+  });
+
+
+    markersById.set(l.id, marker);
+    bounds.extend([l.lat, l.lng]);
+  }
+
+  if (bounds.isValid()) {
+    map.fitBounds(bounds, { padding: [30, 30] });
+  }
+}
 
 function selectLocation(loc) {
-  query.value = loc.name
-  showDropdown.value = false
+  query.value = loc.name;
+  showDropdown.value = false;
 
-  const marker = markersById.get(loc.id)
-  if (!marker) return
+  const marker = markersById.get(loc.id);
+  if (!marker) return;
 
-  map.setView([loc.lat, loc.lng], Math.max(map.getZoom(), 14), {
-    animate: true,
-  })
-  marker.openPopup()
+  map.setView([loc.lat, loc.lng], Math.max(map.getZoom(), 14), { animate: true });
+  marker.openPopup();
 }
 
 function clearSearch() {
-  query.value = ''
-  showDropdown.value = false
+  query.value = "";
+  showDropdown.value = false;
 }
 
 onMounted(async () => {
-  // watch geo location once
-  watch(
-    () => [geo.lat, geo.lng],
-    ([lat, lng]) => map.setView([lat, lng]),
-    { once: true },
-  )
+  // ask device location (async store)
+  geo.setToDeviceLocation();
 
-  geo.setToDeviceLocation()
-
-  // create map
-  map = L.map('map', {
-    center: [geo.lat, geo.lng],
+  // create map with safe center (fallback)
+  map = L.map("map", {
+    center: fallbackCenter,
     zoom: 12,
     zoomControl: false,
-  })
+  });
 
-  L.control.zoom({ position: 'bottomleft' }).addTo(map)
+  L.control.zoom({ position: "bottomright" }).addTo(map);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors',
-  }).addTo(map)
+    attribution: "&copy; OpenStreetMap contributors",
+  }).addTo(map);
 
   // marker icon fix
   const DefaultIcon = L.icon({
@@ -83,49 +241,39 @@ onMounted(async () => {
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
     shadowSize: [41, 41],
-  })
-  L.Marker.prototype.options.icon = DefaultIcon
+  });
+  L.Marker.prototype.options.icon = DefaultIcon;
 
-  // fetch locations from Supabase
-  const { data, error } = await supabase
-    .from('locations')
-    .select('id, name, city, lat, lng, description')
-    .order('name')
+  // layer for markers
+  markerLayer = L.layerGroup().addTo(map);
 
-  if (error) {
-    console.error(error)
-    return
-  }
+  // load locations using composable (single source of truth)
+  await reload();
 
-  locations.value = (data ?? []).filter(
-    (l) => typeof l.lat === 'number' && typeof l.lng === 'number'
-  )
+  // center to device location once (if available)
+  watch(
+    () => [geo.lat, geo.lng],
+    ([lat, lng]) => {
+      if (typeof lat === "number" && typeof lng === "number") {
+        map.setView([lat, lng], 12);
+      }
+    },
+    { once: true }
+  );
 
-  const bounds = L.latLngBounds([])
+  renderMarkers();
 
-  locations.value.forEach((l) => {
-    const marker = L.marker([l.lat, l.lng]).addTo(map)
+  map.on("click", () => {
+    showDropdown.value = false;
+  });
+});
 
-    marker.bindPopup(`
-      <div style="min-width:180px">
-        <strong>${l.name}</strong><br/>
-        <small>${l.city ?? ''}</small><br/>
-        <div style="margin-top:6px">${l.description ?? ''}</div>
-      </div>
-    `)
-
-    markersById.set(l.id, marker)
-    bounds.extend([l.lat, l.lng])
-  })
-
-  if (bounds.isValid()) {
-    map.fitBounds(bounds, { padding: [30, 30] })
-  }
-
-  map.on('click', () => {
-    showDropdown.value = false
-  })
-})
+// if locations change (reload), rebuild markers
+watch(
+  () => locations.value,
+  () => renderMarkers(),
+  { deep: true }
+);
 </script>
 
 <template>
@@ -134,40 +282,32 @@ onMounted(async () => {
 
     <div class="overlay">
       <div class="search-wrap">
-        <div class="search-bar">
-          <span class="search-icon">🔍</span>
+        <SearchBar
+          v-model="query"
+          placeholder="Search boulders..."
+          @focus="showDropdown = true"
+          @clear="clearSearch"
+        />
 
-          <input
-            v-model="query"
-            type="text"
-            placeholder="Search boulders..."
-            @focus="showDropdown = true"
-            @input="showDropdown = true"
-            @keydown.esc="clearSearch"
-          />
+        <div v-if="loading" class="mini-status">Loading…</div>
+        <div v-if="errorMsg" class="mini-status error">{{ errorMsg }}</div>
 
-          <button v-if="query" class="clear-btn" @click="clearSearch">✕</button>
-        </div>
+        <!-- DROPDOWN -->
+        <div v-if="showDropdown && query.trim()" class="dropdown" @mousedown.prevent>
+          <template v-if="filteredLocations.length">
+            <button
+              v-for="b in filteredLocations"
+              :key="b.id"
+              type="button"
+              class="dropdown-item"
+              @click="selectLocation(b)"
+            >
+              <div class="name">{{ b.name }}</div>
+              <div class="city">{{ b.city }}</div>
+            </button>
+          </template>
 
-        <!-- DROPDOWN-->
-        <div v-if="showDropdown && filteredLocations.length" class="dropdown">
-          <button
-            v-for="b in filteredLocations"
-            :key="b.id"
-            class="dropdown-item"
-            @click="selectLocation(b)"
-          >
-            <div class="name">{{ b.name }}</div>
-            <div class="city">{{ b.city }}</div>
-          </button>
-        </div>
-
-        <!-- no results" -->
-        <div
-          v-else-if="showDropdown && query.trim() && filteredLocations.length === 0"
-          class="dropdown empty"
-        >
-          No results
+          <div v-else class="dropdown-empty">No results</div>
         </div>
       </div>
     </div>
@@ -204,41 +344,41 @@ onMounted(async () => {
   position: relative;
 }
 
-.search-bar {
-  width: 100%;
-  padding: 8px 12px;
-  background: #ddd;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* MINI STATUS */
+.mini-status {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  font-size: 12px;
 }
-
-.search-bar input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  font-size: 14px;
-  outline: none;
-}
-
-.clear-btn {
-  border: none;
-  background: white;
-  border-radius: 8px;
-  width: 28px;
-  height: 28px;
-  cursor: pointer;
+.mini-status.error {
+  border-color: rgba(255, 80, 80, 0.35);
+  background: rgba(255, 230, 230, 0.95);
 }
 
 /* DROPDOWN */
 .dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
   margin-top: 8px;
   background: white;
-  border-radius: 12px;
-  border: 1px solid #ccc;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
   overflow: hidden;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  max-height: 280px;
+  overflow-y: auto;
+  z-index: 9999;
+}
+
+.dropdown-empty {
+  padding: 10px 12px;
+  color: rgba(0, 0, 0, 0.7);
+  font-size: 13px;
 }
 
 .dropdown-item {
@@ -251,21 +391,16 @@ onMounted(async () => {
 }
 
 .dropdown-item:hover {
-  background: #f3f3f3;
+  background: rgba(0, 0, 0, 0.04);
 }
 
 .name {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 14px;
 }
 
 .city {
   font-size: 12px;
   opacity: 0.7;
-}
-
-.dropdown.empty {
-  padding: 10px 12px;
-  color: #444;
 }
 </style>

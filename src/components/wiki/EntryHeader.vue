@@ -3,8 +3,8 @@
   <Avatar v-else icon="pi pi-flag-fill" />
   <div class="heading">
     <h2 class="font-bold text-3">{{ entry.name }}</h2>
-    <p v-if="isBoulder">lat: {{ entry.location[0] }}, lng: {{ entry.location[1] }}</p>
-    <p v-else>{{ relatedBoulder.name }}</p>
+    <p v-if="isBoulder">lat: {{ entry.lat }}, lng: {{ entry.lng }}</p>
+    <!--p v-else>{{ relatedBoulder.name }}</p-->
   </div>
 </template>
 
@@ -28,5 +28,3 @@ const isBoulder = computed(() => {
 // WARN: undefined for boulders
 const relatedBoulder = wiki.entries.find((i) => i.id === props.entry.location)
 </script>
-
-<style scoped></style>

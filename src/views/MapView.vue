@@ -1,24 +1,212 @@
 <script setup>
-import { onMounted, ref } from "vue";
+// Fullscreen map view with UI overlay.
+// Loads locations and displays them as markers.
+
+import { ref, onMounted, watch } from "vue";
 import L from "leaflet";
-import { supabase } from "@/lib/supabase";
+import SearchBar from "@/components/SearchBar.vue";
 
 import "leaflet/dist/leaflet.css";
 import iconUrl from "leaflet/dist/images/marker-icon.png";
 import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
 import shadowUrl from "leaflet/dist/images/marker-shadow.png";
 
+import { useOnline, useDocumentVisibility } from "@vueuse/core";
+import { useLocations } from "@/composables/useLocations";
+
 const fallbackCenter = [50.9619, 14.0732];
 
-const loading = ref(false);
-const errorMsg = ref("");
+// Locations composable
+const { locations, loading, errorMsg, reload } = useLocations();
+
+// VueUse: reactive online/offline state
+const isOnline = useOnline();
+
+// VueUse: track browser tab visibility
+const visibility = useDocumentVisibility();
+
+// Search state (was missing before)
+const mapSearch = ref("");
+
+// Leaflet refs
+let map;
+let markerLayer; // holds all current markers
+
+defineExpose({
+  getMap: () => map,
+});
+
+
+function esc(s) {
+  const str = s ? String(s) : "";
+  return str.replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  }[c]));
+}
+
+function buildPopupHtml(loc) {
+  return `
+    <div style="max-width:240px">
+      <div style="font-weight:700; font-size:14px; margin-bottom:6px;">
+        ${esc(loc.name)}
+      </div>
+
+      ${
+        loc.image_url
+          ? `<img
+              src="${esc(loc.image_url)}"
+              alt="${esc(loc.name)}"
+              style="width:100%; border-radius:10px; margin-bottom:8px;"
+            />`
+          : ""
+      }
+
+      ${
+        loc.city
+          ? `<div style="font-size:12px; opacity:.85; margin-bottom:6px;">
+              ${esc(loc.city)}
+            </div>`
+          : ""
+      }
+
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
+        ${
+          loc.type
+            ? `<span style="border:1px solid #ccc; padding:2px 8px; border-radius:999px; font-size:12px;">
+                ${esc(loc.type)}
+              </span>`
+            : ""
+        }
+        ${
+          loc.label
+            ? `<span style="border:1px solid #ccc; padding:2px 8px; border-radius:999px; font-size:12px;">
+                ${esc(loc.label)}
+              </span>`
+            : ""
+        }
+        ${
+          loc.length
+            ? `<span style="border:1px solid #ccc; padding:2px 8px; border-radius:999px; font-size:12px;">
+                ${esc(loc.length)} m
+              </span>`
+            : ""
+        }
+      </div>
+
+      ${
+        loc.first_ascent
+          ? `<div style="font-size:12px; margin-bottom:6px;">
+              <strong>First ascent:</strong> ${esc(loc.first_ascent)}
+            </div>`
+          : ""
+      }
+
+      ${
+        loc.description
+          ? `<div style="font-size:12px; line-height:1.3; margin-bottom:10px;">
+              ${esc(loc.description)}
+            </div>`
+          : ""
+      }
+
+      <button
+        type="button"
+        class="wiki-open-btn"
+        data-wiki-id="${esc(loc.id)}"
+        style="
+          width:100%;
+          padding:8px 10px;
+          border-radius:12px;
+          border:1px solid rgba(0,0,0,.12);
+          background:#fff;
+          font-size:13px;
+          font-weight:600;
+          cursor:pointer;
+        "
+      >
+        Open in Wiki →
+      </button>
+    </div>
+  `;
+}
+
+function matchesSearch(loc, q) {
+  if (!q) return true;
+  const haystack = [
+    loc.name,
+    loc.city,
+    loc.label,
+    loc.type,
+    loc.description,
+    loc.first_ascent,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return haystack.includes(q);
+}
+
+function renderMarkers() {
+  if (!map || !markerLayer) return;
+
+  markerLayer.clearLayers();
+
+  const q = mapSearch.value.trim().toLowerCase();
+  const bounds = [];
+
+  for (const loc of locations.value || []) {
+    if (!matchesSearch(loc, q)) continue;
+
+    // Guard against missing coordinates
+    if (loc.lat == null || loc.lng == null) continue;
+
+    const position = [loc.lat, loc.lng];
+    bounds.push(position);
+
+    const popupHtml = buildPopupHtml(loc);
+
+    const marker = L.marker(position).addTo(markerLayer);
+    
+    marker.bindPopup(popupHtml);
+
+    marker.on("popupopen", (e) => {
+      const el = e.popup.getElement();
+      if (!el) return;
+
+      const btn = el.querySelector(".wiki-open-btn");
+      if (!btn) return;
+
+      if (btn.dataset.bound === "1") return;
+      btn.dataset.bound = "1";
+
+      btn.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+
+        const id = btn.dataset.wikiId;
+        if (!id) return;
+
+        router.push({ name: "wiki-detail", params: { id } });
+      });
+    });
+
+
+  }
+
+  // Only fit if we have results; otherwise keep current view
+  if (bounds.length > 0) {
+    map.fitBounds(bounds, { padding: [30, 30] });
+  }
+}
 
 onMounted(async () => {
-  loading.value = true;
-  errorMsg.value = "";
-
   // 1) Create map
-  const map = L.map("map", {
+  map = L.map("map", {
     center: fallbackCenter,
     zoom: 8,
   });
@@ -40,104 +228,30 @@ onMounted(async () => {
   });
   L.Marker.prototype.options.icon = DefaultIcon;
 
-  // 3) Fetch locations from Supabase
-  const { data, error } = await supabase
-    .from("locations")
-    .select(
-      "id, name, city, lat, lng, type, label, length, first_ascent, description, image_url"
-    )
-    .order("created_at", { ascending: false });
+  // 3) Dedicated marker layer so we can re-render
+  markerLayer = L.layerGroup().addTo(map);
 
-  loading.value = false;
+  // 4) Load locations
+  await reload();
 
-  if (error) {
-    errorMsg.value = error.message;
-    return;
-  }
-
-  const locations = (data ?? []).filter(
-    (x) => typeof x.lat === "number" && typeof x.lng === "number"
-  );
-
-  // 4) Add markers
-  const bounds = [];
-
-  for (const loc of locations) {
-    const position = [loc.lat, loc.lng];
-    bounds.push(position);
-
-    const safe = (v) => (v ? String(v) : "");
-
-    const popupHtml = `
-      <div style="max-width:240px">
-        <div style="font-weight:700; font-size:14px; margin-bottom:6px;">
-          ${safe(loc.name)}
-        </div>
-
-        ${
-          loc.image_url
-            ? `<img src="${safe(loc.image_url)}" alt="${safe(
-                loc.name
-              )}" style="width:100%; border-radius:10px; margin-bottom:8px;" />`
-            : ""
-        }
-
-        <div style="font-size:12px; opacity:.85; margin-bottom:6px;">
-          ${safe(loc.city)}
-        </div>
-
-        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
-          ${
-            loc.type
-              ? `<span style="border:1px solid #ccc; padding:2px 8px; border-radius:999px; font-size:12px;">${safe(
-                  loc.type
-                )}</span>`
-              : ""
-          }
-          ${
-            loc.label
-              ? `<span style="border:1px solid #ccc; padding:2px 8px; border-radius:999px; font-size:12px;">${safe(
-                  loc.label
-                )}</span>`
-              : ""
-          }
-          ${
-            loc.length
-              ? `<span style="border:1px solid #ccc; padding:2px 8px; border-radius:999px; font-size:12px;">${safe(
-                  loc.length
-                )} m</span>`
-              : ""
-          }
-        </div>
-
-        ${
-          loc.first_ascent
-            ? `<div style="font-size:12px; margin-bottom:6px;">
-                <strong>First ascent:</strong> ${safe(loc.first_ascent)}
-              </div>`
-            : ""
-        }
-
-        ${
-          loc.description
-            ? `<div style="font-size:12px; line-height:1.3;">
-                ${safe(loc.description)}
-              </div>`
-            : ""
-        }
-      </div>
-    `;
-
-    L.marker(position).addTo(map).bindPopup(popupHtml);
-  }
-
-  // 5) Fit map to markers (if we have any)
-  if (bounds.length > 0) {
-    map.fitBounds(bounds, { padding: [30, 30] });
+  // 5) Render markers (initial)
+  if ((locations.value || []).length > 0) {
+    renderMarkers();
   } else {
     map.setView(fallbackCenter, 8);
   }
 });
+
+// Re-render markers whenever search changes or locations reload
+watch(mapSearch, () => renderMarkers());
+watch(
+  () => locations.value,
+  () => renderMarkers(),
+  { deep: true }
+);
+
+import { useRouter } from "vue-router";
+const router = useRouter();
 </script>
 
 <template>
@@ -147,150 +261,169 @@ onMounted(async () => {
 
     <!-- UI OVERLAY -->
     <div class="overlay">
-      <!-- EXIT BUTTON -->
-      <button class="exit-button">Exit</button>
+      <!-- TOP PANEL -->
+      <div class="top-panel">
+        <button class="exit-button" type="button" @click="router.push('/profile')">
+          Exit
+        </button>
 
-      <!-- SEARCH BAR -->
-      <div class="search-bar">
-        <span class="search-icon">🔍</span>
-        <input type="text" placeholder="Search" />
-      </div>
+        <div class="search-wrap">
+          <SearchBar v-model="mapSearch" placeholder="Search boulders..." />
+        </div>
 
-      <!-- FILTER TAGS -->
-      <div class="filter-row">
-        <button class="filter-tag">🧗</button>
-        <button class="filter-tag">5–10 km</button>
-        <button class="filter-tag">Filters</button>
+        <div class="filter-row">
+          <button class="filter-tag" type="button">🧗</button>
+          <button class="filter-tag" type="button">5–10 km</button>
+          <button class="filter-tag" type="button">Filters</button>
+        </div>
       </div>
 
       <div v-if="loading" class="status">Loading locations…</div>
       <div v-if="errorMsg" class="status error">{{ errorMsg }}</div>
 
+      <!-- VueUse status indicators -->
+      <div class="status warn" v-if="!isOnline">
+        You are offline – map data may be outdated.
+      </div>
+      <div class="status warn" v-else-if="visibility === 'hidden'">
+        Tab is not active.
+      </div>
+
       <footer class="bottom-nav">
-        <button class="nav-btn">＋</button>
+        <button class="nav-btn" type="button">＋</button>
         <router-link to="/map" class="nav-btn active">🗺️</router-link>
-        <button class="nav-btn">📘</button>
-        <button class="nav-btn">👤</button>
+        <button class="nav-btn" type="button">📘</button>
+        <button class="nav-btn" type="button">👤</button>
       </footer>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* PAGE LAYOUT */
 .map-page {
   width: 100%;
   height: 100vh;
   position: relative;
 }
 
-/* MAP FULLSCREEN */
 #map {
   width: 100%;
   height: 100%;
 }
 
-/* UI OVER MAP */
+/* overlay stays above map, but doesn’t block map clicks by default */
 .overlay {
   position: absolute;
   inset: 0;
-  z-index: 500;        /* <-- keeps UI always above the map */
-  pointer-events: none; /* default: let map capture events */
+  z-index: 500;
+  pointer-events: none;
 }
 
-/* Allow UI elements to be clicked */
-.search-bar,
-.filter-row,
-.exit-button,
+/* Panels/buttons are clickable */
+.top-panel,
+.status,
 .bottom-nav {
   pointer-events: auto;
 }
 
-/* EXIT BUTTON */
-.exit-button {
+/* Top panel: nice “floating card” UI */
+.top-panel {
   position: absolute;
-  top: 80px;
+  top: 14px;
   left: 12px;
-  padding: 6px 12px;
-  font-size: 14px;
-  border: 1px solid #333;
-  background: white;
-  border-radius: 6px;
+  right: 12px;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 10px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
 }
 
-/* SEARCH BAR */
-.search-bar {
-  margin-top: 40px;
-  width: calc(100% - 40px);
-  margin-left: auto;
-  margin-right: auto;
-  padding: 8px 12px;
-  background: #ddd;
-  border-radius: 8px;
-  display: flex;
+/* Exit button (small, clean) */
+.exit-button {
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  font-size: 13px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 10px;
 }
 
-.search-bar input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  font-size: 14px;
-  margin-left: 6px;
-  outline: none;
+/* wrapper around SearchBar so we don't depend on its internal class name */
+.search-wrap {
+  width: 100%;
 }
 
-/* FILTER TAGS */
+/* Filter tags */
 .filter-row {
-  margin-top: 8px;
-  padding: 0 20px;
+  margin-top: 10px;
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .filter-tag {
-  padding: 4px 10px;
-  background: #eee;
-  border: 1px solid #bbb;
-  border-radius: 6px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  border-radius: 999px;
   font-size: 13px;
 }
 
+/* Status messages */
 .status {
   position: absolute;
   top: 140px;
   left: 12px;
   right: 12px;
   margin: 0 auto;
-  max-width: 420px;
+  max-width: 520px;
   background: rgba(255, 255, 255, 0.92);
-  border: 1px solid #ddd;
-  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  border-radius: 14px;
   padding: 8px 10px;
   font-size: 13px;
 }
 
 .status.error {
-  border-color: #ffb3b3;
+  border-color: rgba(255, 80, 80, 0.35);
   background: rgba(255, 230, 230, 0.95);
 }
 
+.status.warn {
+  top: 190px;
+}
+
+/* Bottom nav */
 .bottom-nav {
   position: absolute;
-  bottom: 20px;
-  width: 100%;
+  bottom: 18px;
+  left: 12px;
+  right: 12px;
+  max-width: 520px;
+  margin: 0 auto;
   display: flex;
   justify-content: space-around;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
 }
 
 .nav-btn {
-  font-size: 26px;
+  font-size: 24px;
   background: none;
   border: none;
 }
 
 .active {
   font-weight: bold;
-  transform: scale(1.2);
+  transform: scale(1.08);
 }
 </style>
