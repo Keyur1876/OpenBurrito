@@ -12,14 +12,19 @@ body {
 }
 
 html,
-body,
-#app {
+body {
   height: 100%;
   margin: 0;
+  overflow: hidden;
+}
+
+#app {
+  height: 100dvh;
+  overflow: hidden;
 }
 
 .leaflet-bottom.leaflet-right {
-  margin-bottom: 80px; /* bottom bar + breathing room */
+  margin-bottom: 80px;
 }
 
 .leaflet-control-zoom {

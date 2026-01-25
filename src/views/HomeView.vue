@@ -281,6 +281,7 @@ watch(
     <div id="map"></div>
 
     <div class="overlay">
+      <div class="overlay-inner">
       <div class="search-wrap">
         <SearchBar
           v-model="query"
@@ -312,6 +313,7 @@ watch(
       </div>
     </div>
   </div>
+  </div>
 </template>
 
 <style scoped>
@@ -331,10 +333,17 @@ watch(
   inset: 0;
   z-index: 500;
   pointer-events: none;
+  box-sizing: border-box;
+}
+
+/* new inner wrapper that can have padding */
+.overlay-inner {
+  height: 100%;
   padding-top: 56px;
   padding-bottom: 64px;
   box-sizing: border-box;
 }
+
 
 /* SEARCH AREA */
 .search-wrap {
