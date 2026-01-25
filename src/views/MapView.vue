@@ -302,7 +302,7 @@ const router = useRouter();
 <style scoped>
 .map-page {
   width: 100%;
-  height: 100vh;
+  height: 100dvh;
   position: relative;
 }
 

@@ -152,7 +152,7 @@ onMounted(async () => {
 
 <style scoped>
 .profile-page {
-  min-height: 100vh;
+  min-height: 100dvh;
   /* subtle background */
   background:
     radial-gradient(900px 500px at 30% 10%, rgba(0, 0, 0, 0.06), transparent 60%),
