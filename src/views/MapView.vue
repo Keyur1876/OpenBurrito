@@ -13,6 +13,8 @@ import shadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 import { useOnline, useDocumentVisibility } from "@vueuse/core";
 import { useLocations } from "@/composables/useLocations";
+import { useLocationStore } from "@/stores/location";
+
 
 const fallbackCenter = [50.9619, 14.0732];
 
@@ -151,6 +153,8 @@ function matchesSearch(loc, q) {
   return haystack.includes(q);
 }
 
+const geo = useLocationStore();
+
 function renderMarkers() {
   if (!map || !markerLayer) return;
 
@@ -197,11 +201,12 @@ function renderMarkers() {
 
 
   }
+  const hasDevice = typeof geo.lat === "number" && typeof geo.lng === "number";
 
-  // Only fit if we have results; otherwise keep current view
-  if (bounds.length > 0) {
+  if (!hasDevice && bounds.isValid()) {
     map.fitBounds(bounds, { padding: [30, 30] });
   }
+
 }
 
 onMounted(async () => {
@@ -238,8 +243,24 @@ onMounted(async () => {
   if ((locations.value || []).length > 0) {
     renderMarkers();
   } else {
-    map.setView(fallbackCenter, 8);
+    map.setView(fallbackCenter, 5);
   }
+
+  geo.setToDeviceLocation();
+
+  watch(
+    () => [geo.lat, geo.lng],
+    ([lat, lng]) => {
+      if (typeof lat === "number" && typeof lng === "number") {
+        map.setView(
+          [lat, lng],
+          Math.max(map.getZoom() - 1, 11),
+          { animate: true }
+  );
+      }
+    }
+  );
+
 });
 
 // Re-render markers whenever search changes or locations reload
