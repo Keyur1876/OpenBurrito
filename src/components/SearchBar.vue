@@ -1,4 +1,5 @@
 <script setup>
+import { ref } from "vue";
 // Reusable search bar component.
 // Emits input and clear events to the parent component.
 // eslint-disable-next-line no-unused-vars
@@ -17,6 +18,24 @@ function clear() {
   emit("update:modelValue", "");
   emit("clear");
 }
+
+const inputEl = ref(null);
+
+function focusInput() {
+  inputEl.value?.focus?.();
+}
+
+function blurInput() {
+  inputEl.value?.blur?.();
+}
+
+defineExpose({
+  inputEl,      // exposed variable (DOM ref)
+  focusInput,   // exposed method
+  blurInput,    // exposed method
+  clear,        // exposed method (already exists)
+});
+
 </script>
 
 <template>
