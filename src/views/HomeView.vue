@@ -19,6 +19,7 @@ const geo = useLocationStore();
 const { locations, loading, errorMsg, reload } = useLocations();
 const router = useRouter();
 const fallbackCenter = [50.9619, 14.0732];
+const searchBarRef = ref(null);
 
 // SEARCH
 const query = ref("");
@@ -212,6 +213,8 @@ function selectLocation(loc) {
 function clearSearch() {
   query.value = "";
   showDropdown.value = false;
+
+  searchBarRef.value?.focusInput?.();
 }
 
 onMounted(async () => {
@@ -283,6 +286,7 @@ watch(
     <div class="overlay">
       <div class="search-wrap">
         <SearchBar
+          ref="searchBarRef"
           v-model="query"
           placeholder="Search boulders..."
           @focus="showDropdown = true"
