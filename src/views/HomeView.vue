@@ -3,7 +3,7 @@
 // Integrates Leaflet, search dropdown,
 // and marker interaction.
 
-import { onMounted, ref, computed, watch } from "vue";
+import { onMounted, onActivated, nextTick, ref, computed, watch } from "vue";
 import L from "leaflet";
 import SearchBar from "@/components/SearchBar.vue";
 import "leaflet/dist/leaflet.css";
@@ -19,11 +19,13 @@ const geo = useLocationStore();
 const { locations, loading, errorMsg, reload } = useLocations();
 const router = useRouter();
 const fallbackCenter = [50.9619, 14.0732];
+const searchBarRef = ref(null);
 
 // SEARCH
 const query = ref("");
 const debouncedQuery = refDebounced(query, 250);
 const showDropdown = ref(false);
+const USER_ZOOM = 13; 
 
 const filteredLocations = computed(() => {
   const q = debouncedQuery.value.trim().toLowerCase();
@@ -164,6 +166,9 @@ function renderMarkers() {
       className: "leaflet-popup--loc",
       maxWidth: 360,
       autoPanPadding: [20, 20],
+      autoPan: true,
+      autoPanPaddingTopLeft: [0, 160], // leaves room for your top panel
+      autoPanPaddingBottomRight: [20, 80]
     });
 
     marker.on("popupopen", (e) => {
@@ -187,15 +192,15 @@ function renderMarkers() {
       router.push({ name: "wiki-detail", params: { id } });
     });
   });
-
-
     markersById.set(l.id, marker);
     bounds.extend([l.lat, l.lng]);
   }
 
-  if (bounds.isValid()) {
+  const hasDevice = typeof geo.lat === "number" && typeof geo.lng === "number";
+  if (!hasDevice && bounds.isValid()) {
     map.fitBounds(bounds, { padding: [30, 30] });
   }
+
 }
 
 function selectLocation(loc) {
@@ -205,13 +210,16 @@ function selectLocation(loc) {
   const marker = markersById.get(loc.id);
   if (!marker) return;
 
-  map.setView([loc.lat, loc.lng], Math.max(map.getZoom(), 14), { animate: true });
+  map.setView([loc.lat, loc.lng], USER_ZOOM, { animate: true });
+
   marker.openPopup();
 }
 
 function clearSearch() {
   query.value = "";
   showDropdown.value = false;
+
+  searchBarRef.value?.focusInput?.();
 }
 
 onMounted(async () => {
@@ -251,17 +259,17 @@ onMounted(async () => {
   await reload();
 
   // center to device location once (if available)
-  watch(
-    () => [geo.lat, geo.lng],
-    ([lat, lng]) => {
-      if (typeof lat === "number" && typeof lng === "number") {
-        map.setView([lat, lng], 12);
-      }
-    },
-    { once: true }
-  );
+ watch(
+  () => [geo.lat, geo.lng],
+  ([lat, lng]) => {
+    if (typeof lat === "number" && typeof lng === "number") {
+      map.setView([lat, lng], USER_ZOOM, { animate: true });
+    }
+  }
+);
 
   renderMarkers();
+  recenterToMe();
 
   map.on("click", () => {
     showDropdown.value = false;
@@ -274,6 +282,22 @@ watch(
   () => renderMarkers(),
   { deep: true }
 );
+
+function recenterToMe() {
+  const { lat, lng } = geo;
+  if (typeof lat === "number" && typeof lng === "number") {
+    map.setView([lat, lng], USER_ZOOM, { animate: true });
+  } else {
+    geo.setToDeviceLocation(); // try again if not ready
+  }
+}
+
+onActivated(async () => {
+  await nextTick();
+  map?.invalidateSize();
+  recenterToMe();
+});
+
 </script>
 
 <template>
@@ -284,6 +308,7 @@ watch(
       <div class="overlay-inner">
       <div class="search-wrap">
         <SearchBar
+          ref="searchBarRef"
           v-model="query"
           placeholder="Search boulders..."
           @focus="showDropdown = true"

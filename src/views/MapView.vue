@@ -13,8 +13,12 @@ import shadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 import { useOnline, useDocumentVisibility } from "@vueuse/core";
 import { useLocations } from "@/composables/useLocations";
+import { useLocationStore } from "@/stores/location";
+
 
 const fallbackCenter = [50.9619, 14.0732];
+
+const isPopupOpen = ref(false);
 
 // Locations composable
 const { locations, loading, errorMsg, reload } = useLocations();
@@ -151,6 +155,8 @@ function matchesSearch(loc, q) {
   return haystack.includes(q);
 }
 
+const geo = useLocationStore();
+
 function renderMarkers() {
   if (!map || !markerLayer) return;
 
@@ -172,7 +178,12 @@ function renderMarkers() {
 
     const marker = L.marker(position).addTo(markerLayer);
     
-    marker.bindPopup(popupHtml);
+    marker.bindPopup(popupHtml, {
+      autoPan: true,
+      autoPanPaddingTopLeft: [0, 160], // leaves room for your top panel
+      autoPanPaddingBottomRight: [20, 80]
+    });
+
 
     marker.on("popupopen", (e) => {
       const el = e.popup.getElement();
@@ -193,15 +204,18 @@ function renderMarkers() {
 
         router.push({ name: "wiki-detail", params: { id } });
       });
+
+      marker.on("popupopen", () => (isPopupOpen.value = true));
     });
 
 
   }
+  const hasDevice = typeof geo.lat === "number" && typeof geo.lng === "number";
 
-  // Only fit if we have results; otherwise keep current view
-  if (bounds.length > 0) {
+  if (!hasDevice && bounds.isValid()) {
     map.fitBounds(bounds, { padding: [30, 30] });
   }
+
 }
 
 onMounted(async () => {
@@ -238,8 +252,24 @@ onMounted(async () => {
   if ((locations.value || []).length > 0) {
     renderMarkers();
   } else {
-    map.setView(fallbackCenter, 8);
+    map.setView(fallbackCenter, 5);
   }
+
+  geo.setToDeviceLocation();
+
+  watch(
+    () => [geo.lat, geo.lng],
+    ([lat, lng]) => {
+      if (typeof lat === "number" && typeof lng === "number") {
+        map.setView(
+          [lat, lng],
+          Math.max(map.getZoom() - 1, 11),
+          { animate: true }
+  );
+      }
+    }
+  );
+
 });
 
 // Re-render markers whenever search changes or locations reload
@@ -262,7 +292,7 @@ const router = useRouter();
     <!-- UI OVERLAY -->
     <div class="overlay">
       <!-- TOP PANEL -->
-      <div class="top-panel">
+      <div class="top-panel" :class="{ 'is-hidden': isPopupOpen }">
         <button class="exit-button" type="button" @click="router.push('/profile')">
           Exit
         </button>
@@ -316,6 +346,11 @@ const router = useRouter();
   position: absolute;
   inset: 0;
   z-index: 500;
+  pointer-events: none;
+}
+
+.is-hidden {
+  opacity: 0;
   pointer-events: none;
 }
 
