@@ -74,7 +74,7 @@ const router = useRouter()
 
 <style scoped>
 .about-page {
-  min-height: 100dvh;
+  min-height: 100vh;
   background: linear-gradient(to bottom, #fafafa, #f3f4f6);
   padding: 18px;
 }

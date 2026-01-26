@@ -322,7 +322,7 @@ function cancel() {
 
 <style scoped>
 .page {
-  min-height: 100dvh;
+  min-height: 100vh;
   padding: 18px 16px 110px;
   background: linear-gradient(to bottom, #fafafa, #f3f4f6);
 }
