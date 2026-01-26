@@ -14,13 +14,14 @@ body {
 .leaflet-popup--loc .leaflet-popup-content-wrapper {
   border-radius: 16px;
   padding: 0;
-  overflow: hidden;
+  overflow: auto;
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
 }
 
 .leaflet-popup--loc .leaflet-popup-content {
   margin: 0;
-  width: 340px; /* popup size */
+  width: 340px;
+  /* popup size */
 }
 
 .leaflet-popup--loc .leaflet-popup-tip {
@@ -71,8 +72,8 @@ body {
 }
 
 .loc-popup__chips .chip {
-  border: 1px solid rgba(0,0,0,0.18);
-  background: rgba(0,0,0,0.04);
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  background: rgba(0, 0, 0, 0.04);
   padding: 3px 9px;
   border-radius: 999px;
   font-size: 12px;
@@ -96,5 +97,6 @@ body {
 
 /* Move Leaflet controls above BottomBar */
 .leaflet-bottom.leaflet-right {
-  margin-bottom: 80px; /* adjust to bottom bar height */
+  margin-bottom: 80px;
+  /* adjust to bottom bar height */
 }

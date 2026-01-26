@@ -15,12 +15,12 @@ html,
 body {
   height: 100%;
   margin: 0;
-  overflow: hidden;
+  overflow: auto;
 }
 
 #app {
   height: 100vh;
-  overflow: hidden;
+  overflow: auto;
 }
 
 .leaflet-bottom.leaflet-right {
@@ -29,5 +29,5 @@ body {
 
 .leaflet-control-zoom {
   border-radius: 12px;
-  overflow: hidden;
+  overflow: auto;
 }
