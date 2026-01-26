@@ -166,6 +166,9 @@ function renderMarkers() {
       className: "leaflet-popup--loc",
       maxWidth: 360,
       autoPanPadding: [20, 20],
+      autoPan: true,
+      autoPanPaddingTopLeft: [0, 160], // leaves room for your top panel
+      autoPanPaddingBottomRight: [20, 80]
     });
 
     marker.on("popupopen", (e) => {
