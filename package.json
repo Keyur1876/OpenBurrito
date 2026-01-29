@@ -11,7 +11,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --fix --cache",
-    "format": "prettier --write --experimental-cli src/"
+    "format": "prettier --write --experimental-cli src/",
+    "test": "vitest"
   },
   "dependencies": {
     "@primeuix/themes": "^2.0.2",
@@ -36,9 +37,11 @@
     "eslint": "^9.39.1",
     "eslint-plugin-vue": "~10.5.1",
     "globals": "^16.5.0",
+    "jsdom": "^27.4.0",
     "prettier": "3.6.2",
     "sass": "^1.97.2",
     "vite": "^7.2.4",
-    "vite-plugin-vue-devtools": "^8.0.5"
+    "vite-plugin-vue-devtools": "^8.0.5",
+    "vitest": "^4.0.18"
   }
 }

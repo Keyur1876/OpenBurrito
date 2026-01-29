@@ -65,67 +65,14 @@ function onImageChange(e) {
  * Validate required fields (everything except description + first ascent).
  * Returns true if valid; otherwise sets errorMsg and returns false.
  */
+import { validateLocation } from "@/utils/locationValidation";
+
 function validateForm() {
-  const name = form.value.name.trim();
-  const city = form.value.city.trim();
-  const type = (form.value.type || "").trim();
-  const label = form.value.label.trim();
-
-  // length should be a positive number
-  const lengthRaw = String(form.value.length).trim();
-  const lengthNum = Number(lengthRaw);
-
-  // lat/lng should be numbers and in valid ranges
-  const latNum = Number(form.value.lat);
-  const lngNum = Number(form.value.lng);
-
-  if (!name) {
-    errorMsg.value = "Please enter a name.";
+  const res = validateLocation(form.value);
+  if (!res.ok) {
+    errorMsg.value = res.error;
     return false;
   }
-
-  if (!city) {
-    errorMsg.value = "Please enter a city.";
-    return false;
-  }
-
-  // coordinates: user must provide both and they must parse correctly
-  if (form.value.lat === "" || form.value.lng === "") {
-    errorMsg.value = "Please enter coordinates (lat, lng).";
-    return false;
-  }
-  if (Number.isNaN(latNum) || Number.isNaN(lngNum)) {
-    errorMsg.value = "Coordinates must be valid numbers (lat, lng).";
-    return false;
-  }
-  if (latNum < -90 || latNum > 90) {
-    errorMsg.value = "Latitude must be between -90 and 90.";
-    return false;
-  }
-  if (lngNum < -180 || lngNum > 180) {
-    errorMsg.value = "Longitude must be between -180 and 180.";
-    return false;
-  }
-
-  if (!type) {
-    errorMsg.value = "Please select a type (Boulder / Klettern).";
-    return false;
-  }
-
-  if (!label) {
-    errorMsg.value = "Please enter a label.";
-    return false;
-  }
-
-  if (!lengthRaw) {
-    errorMsg.value = "Please enter the length in meters.";
-    return false;
-  }
-  if (Number.isNaN(lengthNum) || lengthNum <= 0) {
-    errorMsg.value = "Length must be a positive number.";
-    return false;
-  }
-
   return true;
 }
 
