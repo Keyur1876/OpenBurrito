@@ -5,8 +5,6 @@
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { supabase } from "@/lib/supabase";
-import BaseCard from "@/components/BaseCard.vue";
-
 const router = useRouter();
 
 const saving = ref(false);
@@ -245,7 +243,7 @@ function cancel() {
         <div class="grid">
           <div class="field">
             <label>Name <span class="req">*</span></label>
-            <input v-model="form.name" placeholder="e.g. Waldkante" />
+            <input v-model="form.name" placeholder="e.g. Waldkante" ref="nameInput"/>
           </div>
 
           <div class="field">
