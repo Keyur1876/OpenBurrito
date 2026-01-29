@@ -36,7 +36,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch, reactive } from "vue"; // ✅ add reactive
 import { useRoute, useRouter } from "vue-router";
 import { DataView } from "primevue";
 import Dialog from "primevue/dialog";
@@ -56,7 +56,18 @@ const router = useRouter();
 const dialogOpen = ref(false);
 const selectedId = ref(null);
 
+const ui = reactive({
+  dialogOpen: false,
+  selectedId: null,
+});
+
+const debugState = reactive({
+  mountedAt: null,
+  lastRouteId: null,
+});
+
 onMounted(async () => {
+  debugState.mountedAt = Date.now();
   await reload();
 });
 
@@ -79,14 +90,11 @@ const selectedEntry = computed(() => {
   return (locations.value || []).find((l) => String(l.id) === String(selectedId.value)) || null;
 });
 
-/**
- *  Route → dialog
- * /wiki/:id opens dialog automatically
- * /wiki closes it
- */
 watch(
   () => route.params.id,
   (id) => {
+    debugState.lastRouteId = id ?? null;
+
     if (id) {
       selectedId.value = id;
       dialogOpen.value = true;
@@ -98,18 +106,26 @@ watch(
   { immediate: true }
 );
 
-/**
- * Card click → route
- * This makes clicking cards behave EXACTLY like marker click
- */
+watch(
+  dialogOpen,
+  (v) => {
+    ui.dialogOpen = v;
+  },
+  { immediate: true }
+);
+
+watch(
+  selectedId,
+  (v) => {
+    ui.selectedId = v;
+  },
+  { immediate: true }
+);
+
 function openEntry(entry) {
   router.push({ name: "wiki-detail", params: { id: entry.id } });
 }
 
-/**
- * Close dialog → route back to /wiki
- * IMPORTANT: use replace so URL becomes /wiki immediately
- */
 function onDialogHide() {
   if (route.params.id) {
     router.replace({ name: "wiki" }); // or router.replace("/wiki")
